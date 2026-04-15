@@ -29,17 +29,13 @@ const classFilter = document.getElementById('classFilter');
 const searchBtn = document.getElementById('searchBtn');
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-// Modal Elements
-const joinModal = document.getElementById('joinModal');
-const joinBtn = document.getElementById('joinBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const tutorForm = document.getElementById('tutorForm');
-const modalFormContent = document.getElementById('modalFormContent');
-const modalSuccessContent = document.getElementById('modalSuccessContent');
-const successCloseBtn = document.getElementById('successCloseBtn');
-const submitBtn = document.getElementById('submitBtn');
-const submitText = document.getElementById('submitText');
 const submitSpinner = document.getElementById('submitSpinner');
+
+// Mobile Nav Elements
+const mobileMenu = document.getElementById('mobileMenu');
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const mobileMenuClose = document.getElementById('mobileMenuClose');
+const mobileJoinBtn = document.getElementById('mobileJoinBtn');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -234,6 +230,27 @@ function setupEventListeners() {
             applyFilters();
         });
     }
+
+    // MOBILE MENU LOGIC
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', () => {
+            mobileMenu.classList.add('active');
+        });
+    }
+
+    if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+        });
+    }
+
+    // Handle clicks on mobile nav links to close menu
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-item');
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+        });
+    });
 }
 
 function applyFilters() {
@@ -350,6 +367,11 @@ function closeModal() {
 
 // Event Listeners for Modal
 if (joinBtn) joinBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+if (mobileJoinBtn) mobileJoinBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    mobileMenu.classList.remove('active'); // close menu first
+    openModal(); 
+});
 if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 if (successCloseBtn) successCloseBtn.addEventListener('click', closeModal);
 
