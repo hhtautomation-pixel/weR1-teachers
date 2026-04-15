@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>weR1 Tutors & Teachers</title>
+    
+    <!-- SEO and Meta tags -->
+    <meta name="description" content="Find the best tuition teachers, coaching centers, and educators in your area. Browse by subject, class, and category.">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Google Fonts: Outfit & Inter for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for standard Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Background Decoration -->
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+
+    <!-- Header / Nav -->
+    <header class="glass-header">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-text">we<span class="highlight">R</span>1 <span class="sub-logo">Tutors</span></span>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="active">Directory</a>
+                <a href="#">How it Works</a>
+                <a href="#" class="btn-primary" id="joinBtn">Join as Tutor</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="fade-up">Find Your Perfect <br><span class="gradient-text">Educator</span> Today.</h1>
+            <p class="fade-up delay-1">Discover expert tuition teachers and coaching centers for all subjects, classes, and areas.</p>
+            
+            <!-- Global Search & Filters -->
+            <div class="search-container fade-up delay-2 glass-panel">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search for subjects, areas, or topics...">
+                </div>
+                
+                <div class="filter-group">
+                    <select id="categoryFilter" class="filter-dropdown">
+                        <option value="">All Categories</option>
+                        <option value="Tuition Teacher">Tuition Teacher</option>
+                        <option value="Coaching Center">Coaching Center</option>
+                    </select>
+
+                    <select id="classFilter" class="filter-dropdown">
+                        <option value="">All Classes</option>
+                        <option value="1 to 5">Class 1 to 5</option>
+                        <option value="6 to 10">Class 6 to 10</option>
+                        <option value="11 to 12">Class 11 to 12</option>
+                        <option value="Graduation">Graduation & Above</option>
+                    </select>
+
+                    <button id="searchBtn" class="btn-primary search-btn">Find Tutor</button>
+                </div>
+            </div>
+            
+            <div class="active-filters-display" id="activeFiltersContainer">
+                <!-- Dynamically populated tags will go here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="directory-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Browse Directory</h2>
+                <div class="results-count" id="resultsCount">Loading...</div>
+            </div>
+
+            <!-- Redesigned Interaction: Category Tabs -->
+            <div class="dir-tabs">
+                <button class="dir-tab active" data-category="">Discover All</button>
+                <button class="dir-tab" data-category="Tuition Teacher">Tuition Teachers</button>
+                <button class="dir-tab" data-category="Coaching Center">Coaching Centres</button>
+            </div>
+
+            <!-- Interactive Sub-filters: Chips -->
+            <div class="filter-chips-wrapper">
+                <div class="filter-chips" id="classChips">
+                    <!-- Javascript will inject class chips here -->
+                </div>
+            </div>
+            
+            <!-- Loader -->
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>Loading the best educators...</p>
+            </div>
+
+            <!-- Tutors Grid -->
+            <div class="tutors-grid" id="tutorsGrid">
+                <!-- Javascript will inject cards here -->
+            </div>
+            
+            <!-- No Results State -->
+            <div id="noResults" class="no-results hidden">
+                <i class="fa-solid fa-folder-open"></i>
+                <h3>No Tutors Found</h3>
+                <p>We couldn't find anyone matching your current filters. Try adjusting your search criteria.</p>
+                <button id="clearFiltersBtn" class="btn-secondary mt-2">Clear All Filters</button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 weR1 Tutors & Teachers. Empowering Education.</p>
+        </div>
+    </footer>
+
+    <!-- Join as Tutor Modal -->
+    <div class="modal-overlay" id="joinModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div id="modalFormContent">
+                <div class="modal-header">
+                    <h2>Join as Tutor</h2>
+                    <p>Register to be listed in our directory. Pending admin approval.</p>
+                </div>
+                
+                <form id="tutorForm">
+                    <div class="form-group">
+                        <label for="regName">Full Name</label>
+                        <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regCategory">Category</label>
+                        <select id="regCategory" class="form-input" required>
+                            <option value="">Select Category</option>
+                            <option value="Tuition Teacher">Tuition Teacher</option>
+                            <option value="Coaching Center">Coaching Center</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regClasses">Classes Taught</label>
+                        <input type="text" id="regClasses" class="form-input" required placeholder="e.g., 6 to 10, 11 to 12">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regSubjects">Subjects</label>
+                        <input type="text" id="regSubjects" class="form-input" required placeholder="e.g., Maths, Science">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regArea">Area / Location</label>
+                        <input type="text" id="regArea" class="form-input" required placeholder="e.g., Park Circus">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regContact">Contact Details</label>
+                        <input type="text" id="regContact" class="form-input" required placeholder="Phone number or Email">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary btn-block" id="submitBtn">
+                        <span id="submitText">Submit Registration</span>
+                        <i class="fa-solid fa-spinner fa-spin hidden" id="submitSpinner"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <div id="modalSuccessContent" class="hidden">
+                <div class="success-message">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h2>Registration Sent!</h2>
+                    <p>Your details have been submitted successfully. Once the Admin verifies and approves your listing, it will appear in the directory.</p>
+                    <button class="btn-primary btn-block mt-2" id="successCloseBtn">Close</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- PapaParse Library for CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- Main Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
