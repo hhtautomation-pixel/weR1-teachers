@@ -135,11 +135,18 @@ function renderTutors(dataToRender) {
                             <span>${classes}</span>
                         </div>
                     </div>
+
+                    <div class="detail-row">
+                        <i class="fa-solid fa-envelope detail-icon"></i>
+                        <div class="detail-content">
+                            <span class="detail-label">EMAIL</span>
+                            <span>${tutor['Email'] || 'N/A'}</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="card-actions">
-                    <button class="action-btn connect-btn"><i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Connect</button>
-                    <!-- Future: <button class="action-btn">View Profile</button> -->
+                    <a href="tel:${tutor['Phone']}" class="action-btn connect-btn"><i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${tutor['Phone'] || 'Tutor'}</a>
                 </div>
             </div>
         `;
@@ -370,7 +377,8 @@ if (tutorForm) {
         formData.append('Classes', document.getElementById('regClasses').value);
         formData.append('Subjects', document.getElementById('regSubjects').value);
         formData.append('Area', document.getElementById('regArea').value);
-        formData.append('Contact', document.getElementById('regContact').value);
+        formData.append('Phone', document.getElementById('regPhone').value);
+        formData.append('Email', document.getElementById('regEmail').value);
 
         // If no Apps Script URL is set, alert the user
         if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.trim() === "") {

@@ -169,8 +169,15 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="regContact">Contact Details</label>
-                        <input type="text" id="regContact" class="form-input" required placeholder="Phone number or Email">
+                        <label for="regPhone">Phone Number</label>
+                        <input type="tel" id="regPhone" class="form-input" required 
+                               pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number"
+                               placeholder="e.g. 9876543210">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regEmail">Email Address</label>
+                        <input type="email" id="regEmail" class="form-input" required placeholder="e.g. ahsan@example.com">
                     </div>
                     
                     <button type="submit" class="btn-primary btn-block" id="submitBtn">
