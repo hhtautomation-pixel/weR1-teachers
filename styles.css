@@ -108,7 +108,7 @@ a {
 .nav-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 16px 24px;
+    padding: 14px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -285,15 +285,28 @@ a {
 
 /* --- HERO SECTION --- */
 .hero {
-    padding-top: 160px;
-    padding-bottom: 80px;
+    padding-top: 126px;
+    padding-bottom: 52px;
     text-align: center;
 }
 
 .hero-content {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 24px;
+}
+
+.hero-stats {
+    margin-bottom: 34px;
+}
+
+.hero h1,
+.hero p,
+.hero .search-container,
+.hero .active-filters-display {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero h1 {
@@ -312,7 +325,7 @@ a {
 .hero p {
     font-size: 1.125rem;
     color: var(--color-text-muted);
-    margin-bottom: 48px;
+    margin-bottom: 36px;
 }
 
 /* --- SEARCH & FILTERS --- */
@@ -412,6 +425,39 @@ a {
     margin-top: 16px;
 }
 
+/* --- STATS PANEL --- */
+.stats-panel {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.stat-card {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 244, 0.88));
+    border: 1px solid rgba(5, 150, 105, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+    padding: 20px 22px;
+    text-align: left;
+}
+
+.stat-value {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    line-height: 1;
+    color: var(--color-primary-dark);
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
 .filter-tag {
     background: rgba(5, 150, 105, 0.1);
     color: var(--color-primary-dark);
@@ -427,16 +473,16 @@ a {
 
 /* --- DIRECTORY SECTION --- */
 .directory-section {
-    padding: 40px 0 100px;
+    padding: 26px 0 88px;
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
     border-bottom: 1px solid var(--color-border);
-    padding-bottom: 16px;
+    padding-bottom: 14px;
 }
 
 .section-header h2 {
@@ -621,7 +667,7 @@ a {
 
 .no-results {
     text-align: center;
-    padding: 60px 20px;
+    padding: 52px 20px;
     background: var(--color-surface);
     border-radius: var(--radius-lg);
     border: 1px dashed var(--color-border);
@@ -631,6 +677,17 @@ a {
     font-size: 3rem;
     color: var(--color-border);
     margin-bottom: 16px;
+}
+
+#searchPrompt {
+    border-style: solid;
+    border-color: rgba(5, 150, 105, 0.18);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 244, 0.9));
+}
+
+#searchPrompt i {
+    color: var(--color-primary);
 }
 
 .hidden {
@@ -658,8 +715,8 @@ a {
 /* Responsive */
 @media (max-width: 768px) {
     .hero {
-        padding-top: 120px;
-        padding-bottom: 40px;
+        padding-top: 106px;
+        padding-bottom: 32px;
     }
 
     .hero h1 {
@@ -690,6 +747,20 @@ a {
 
     .section-header h2 {
         font-size: 1.75rem;
+    }
+
+    .stats-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .hero-stats {
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        padding: 16px;
+        border-radius: 16px;
     }
 }
 
@@ -820,7 +891,7 @@ a {
 .dir-tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     background: rgba(226, 232, 240, 0.4);
     padding: 6px;
     border-radius: var(--radius-lg);
@@ -862,9 +933,16 @@ a {
     box-shadow: var(--shadow-sm);
 }
 
+.controls-disabled {
+    opacity: 0.38;
+    filter: grayscale(1);
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Chips Filter Strip */
 .filter-chips-wrapper {
-    margin: 0 -24px 32px -24px; /* Bleed to edges on mobile */
+    margin: 0 -24px 18px -24px; /* Bleed to edges on mobile */
     padding: 0 24px 8px 24px;
     overflow-x: auto;
     scrollbar-width: none; 
@@ -933,4 +1011,3 @@ a {
     opacity: 0.9;
     transform: none;
 }
-

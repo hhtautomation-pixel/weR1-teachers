@@ -12,15 +12,19 @@ const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8uNCOM
 let tutorsData = [];
 let activeTabCategory = '';
 let activeClassChip = 'All';
+let hasCommittedSearch = false;
 
 // DOM Elements
 const tutorsGrid = document.getElementById('tutorsGrid');
 const loader = document.getElementById('loader');
 const noResults = document.getElementById('noResults');
+const searchPrompt = document.getElementById('searchPrompt');
 const resultsCount = document.getElementById('resultsCount');
 const activeFiltersContainer = document.getElementById('activeFiltersContainer');
-const classChipsContainer = document.getElementById('classChips');
-const dirTabs = document.querySelectorAll('.dir-tab');
+const teachersCount = document.getElementById('teachersCount');
+const centersCount = document.getElementById('centersCount');
+const locationsCount = document.getElementById('locationsCount');
+const subjectsCount = document.getElementById('subjectsCount');
 
 // Inputs
 const searchInput = document.getElementById('searchInput');
@@ -69,12 +73,13 @@ function fetchData() {
 function processData(data) {
     tutorsData = data;
     hideLoader();
-    renderClassChips(); // Initial chips
+    updateStats();
     applyFilters();
 }
 
 function renderTutors(dataToRender) {
     tutorsGrid.innerHTML = '';
+    searchPrompt.classList.add('hidden');
 
     resultsCount.textContent = `Showing ${dataToRender.length} Tutors`;
 
@@ -150,18 +155,47 @@ function renderTutors(dataToRender) {
     });
 }
 
+function updateStats() {
+    const approvedTutors = getApprovedTutors();
+    const teacherTotal = approvedTutors.filter(tutor => tutor['Category'] === 'Tuition Teacher').length;
+    const centerTotal = approvedTutors.filter(tutor => tutor['Category'] === 'Coaching Center').length;
+    const uniqueLocations = new Set();
+    const uniqueSubjects = new Set();
+
+    approvedTutors.forEach(tutor => {
+        splitMultiValueField(tutor['Area']).forEach(location => uniqueLocations.add(location));
+        splitMultiValueField(tutor['Subjects Taught']).forEach(subject => uniqueSubjects.add(subject));
+    });
+
+    teachersCount.textContent = teacherTotal;
+    centersCount.textContent = centerTotal;
+    locationsCount.textContent = uniqueLocations.size;
+    subjectsCount.textContent = uniqueSubjects.size;
+}
+
 function setupEventListeners() {
     categoryFilter.addEventListener('change', () => {
         activeTabCategory = categoryFilter.value;
-        syncTabsUI();
-        renderClassChips();
+        hasCommittedSearch = hasActiveCriteria();
         applyFilters();
     });
 
     classFilter.addEventListener('change', () => {
         activeClassChip = classFilter.value || 'All';
-        renderClassChips();
+        hasCommittedSearch = hasActiveCriteria();
         applyFilters();
+    });
+
+    searchBtn.addEventListener('click', () => {
+        hasCommittedSearch = true;
+        applyFilters();
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            hasCommittedSearch = true;
+            applyFilters();
+        }
     });
 
     clearFiltersBtn.addEventListener('click', () => {
@@ -170,10 +204,7 @@ function setupEventListeners() {
         classFilter.value = '';
         activeTabCategory = '';
         activeClassChip = 'All';
-
-        // Sync UI
-        syncTabsUI();
-        renderClassChips();
+        hasCommittedSearch = false;
         applyFilters();
     });
 
@@ -189,47 +220,15 @@ function setupEventListeners() {
         if (type === 'category') {
             categoryFilter.value = '';
             activeTabCategory = '';
-            syncTabsUI();
-            renderClassChips();
         }
         if (type === 'class') {
             classFilter.value = '';
             activeClassChip = 'All';
-            renderClassChips();
         }
 
+        hasCommittedSearch = hasActiveCriteria();
         applyFilters();
     });
-
-    // TAB LISTENERS
-    dirTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            activeTabCategory = tab.getAttribute('data-category');
-            activeClassChip = 'All'; // Reset chip on tab change
-
-            // Update UI
-            syncTabsUI();
-            renderClassChips();
-            applyFilters();
-        });
-    });
-
-    // CHIP LISTENERS (Delegation)
-    if (classChipsContainer) {
-        classChipsContainer.addEventListener('click', (e) => {
-            const chip = e.target.closest('.chip');
-            if (!chip) return;
-
-            activeClassChip = chip.getAttribute('data-value');
-
-            // Sync UI
-            const allChips = classChipsContainer.querySelectorAll('.chip');
-            allChips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-
-            applyFilters();
-        });
-    }
 
     // MOBILE MENU LOGIC
     if (mobileMenuToggle) {
@@ -262,13 +261,12 @@ function applyFilters() {
 
     updateActiveFiltersTags(searchTerm, catValue, classValue);
 
-    const filteredData = tutorsData.filter(tutor => {
-        // Enforce Admin Approval Strategy
-        // Only show if Status is explicitly Approved (if the column exists)
-        if (tutor['Status'] && tutor['Status'].toLowerCase().trim() !== 'approved') {
-            return false;
-        }
+    if (!hasCommittedSearch) {
+        renderPrivateState();
+        return;
+    }
 
+    const filteredData = getApprovedTutors().filter(tutor => {
         // Search across multiple fields
         const matchesSearch = searchTerm === '' ||
             (tutor['Name'] && tutor['Name'].toLowerCase().includes(searchTerm)) ||
@@ -287,6 +285,42 @@ function applyFilters() {
     renderTutors(filteredData);
 }
 
+function getApprovedTutors() {
+    return tutorsData.filter(tutor => {
+        if (!tutor['Status']) {
+            return true;
+        }
+
+        return tutor['Status'].toLowerCase().trim() === 'approved';
+    });
+}
+
+function hasActiveCriteria() {
+    const hasSearchTerm = searchInput.value.trim() !== '';
+    const hasCategory = activeTabCategory !== '';
+    const hasClass = activeClassChip !== '' && activeClassChip !== 'All';
+    return hasSearchTerm || hasCategory || hasClass;
+}
+
+function renderPrivateState() {
+    tutorsGrid.innerHTML = '';
+    tutorsGrid.classList.add('hidden');
+    noResults.classList.add('hidden');
+    searchPrompt.classList.remove('hidden');
+    resultsCount.textContent = 'Search to view matching educators';
+}
+
+function splitMultiValueField(value) {
+    if (!value) {
+        return [];
+    }
+
+    return value
+        .split(/[,/|]+/)
+        .map(item => item.trim())
+        .filter(Boolean);
+}
+
 function updateActiveFiltersTags(search, cat, cls) {
     activeFiltersContainer.innerHTML = '';
 
@@ -300,50 +334,6 @@ function updateActiveFiltersTags(search, cat, cls) {
     if (cls) tagsHTML += createTag(`Class: ${cls}`, 'class');
 
     activeFiltersContainer.innerHTML = tagsHTML;
-}
-
-// --- REDESIGN UTILS (V3) ---
-
-function syncTabsUI() {
-    dirTabs.forEach(tab => {
-        if (tab.getAttribute('data-category') === activeTabCategory) {
-            tab.classList.add('active');
-        } else {
-            tab.classList.remove('active');
-        }
-    });
-}
-
-function renderClassChips() {
-    if (!classChipsContainer) return;
-
-    // Determine relevant data based on active tab
-    const relevantData = tutorsData.filter(t => {
-        const approved = t['Status'] && t['Status'].toLowerCase().trim() === 'approved';
-        const matchesCategory = activeTabCategory === '' || t['Category'] === activeTabCategory;
-        return approved && matchesCategory;
-    });
-
-    // Extract unique classes
-    const classesSet = new Set();
-    relevantData.forEach(t => {
-        if (t['Classes Taught']) {
-            // Some might be "6 to 10, 11 to 12" -> we split or just keep as is?
-            // For discovery, let's keep the exact values found in data strings for now
-            classesSet.add(t['Classes Taught']);
-        }
-    });
-
-    const uniqueClasses = Array.from(classesSet).sort();
-
-    let chipsHTML = `<div class="chip ${activeClassChip === 'All' ? 'active' : ''}" data-value="All">All Classes</div>`;
-
-    uniqueClasses.forEach(c => {
-        const isActive = activeClassChip === c ? 'active' : '';
-        chipsHTML += `<div class="chip ${isActive}" data-value="${c}">${c}</div>`;
-    });
-
-    classChipsContainer.innerHTML = chipsHTML;
 }
 
 // --- MODAL & FORM LOGIC ---
@@ -443,6 +433,7 @@ function showLoader() {
     loader.classList.remove('hidden');
     tutorsGrid.classList.add('hidden');
     noResults.classList.add('hidden');
+    searchPrompt.classList.add('hidden');
 }
 
 function hideLoader() {

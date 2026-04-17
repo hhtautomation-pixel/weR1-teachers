@@ -33,7 +33,7 @@
                 <span class="logo-text">we<span class="highlight">R</span>1 <span class="sub-logo">Tutors</span></span>
             </div>
             <nav class="nav-links">
-                <a href="#" class="active">Directory</a>
+                <a href="#" class="active">Search</a>
                 <a href="#">How it Works</a>
                 <a href="#" class="btn-primary" id="joinBtn">Join as Tutor</a>
             </nav>
@@ -50,7 +50,7 @@
         <div class="mobile-menu-content">
             <button class="mobile-menu-close" id="mobileMenuClose"><i class="fa-solid fa-xmark"></i></button>
             <div class="mobile-nav-links">
-                <a href="#" class="mobile-nav-item active">Directory</a>
+                <a href="#" class="mobile-nav-item active">Search</a>
                 <a href="#" class="mobile-nav-item">How it Works</a>
                 <a href="#" class="btn-primary" id="mobileJoinBtn">Join as Tutor</a>
             </div>
@@ -60,6 +60,25 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
+            <div class="stats-panel hero-stats" id="statsPanel">
+                <div class="stat-card">
+                    <span class="stat-value" id="teachersCount">0</span>
+                    <span class="stat-label">Tuition Teachers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="centersCount">0</span>
+                    <span class="stat-label">Coaching Centres</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="locationsCount">0</span>
+                    <span class="stat-label">Locations</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="subjectsCount">0</span>
+                    <span class="stat-label">Subjects Covered</span>
+                </div>
+            </div>
+
             <h1 class="fade-up">Find Your Perfect <br><span class="gradient-text">Educator</span> Today.</h1>
             <p class="fade-up delay-1">Discover expert tuition teachers and coaching centers for all subjects, classes, and areas.</p>
             
@@ -99,24 +118,10 @@
     <main class="directory-section">
         <div class="container">
             <div class="section-header">
-                <h2>Browse Directory</h2>
+                <h2>Search Results</h2>
                 <div class="results-count" id="resultsCount">Loading...</div>
             </div>
 
-            <!-- Redesigned Interaction: Category Tabs -->
-            <div class="dir-tabs">
-                <button class="dir-tab active" data-category="">Discover All</button>
-                <button class="dir-tab" data-category="Tuition Teacher">Tuition Teachers</button>
-                <button class="dir-tab" data-category="Coaching Center">Coaching Centres</button>
-            </div>
-
-            <!-- Interactive Sub-filters: Chips -->
-            <div class="filter-chips-wrapper">
-                <div class="filter-chips" id="classChips">
-                    <!-- Javascript will inject class chips here -->
-                </div>
-            </div>
-            
             <!-- Loader -->
             <div id="loader" class="loader-container">
                 <div class="spinner"></div>
@@ -134,6 +139,12 @@
                 <h3>No Tutors Found</h3>
                 <p>We couldn't find anyone matching your current filters. Try adjusting your search criteria.</p>
                 <button id="clearFiltersBtn" class="btn-secondary mt-2">Clear All Filters</button>
+            </div>
+
+            <div id="searchPrompt" class="no-results hidden">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h3>Directory Access Is Search-Only</h3>
+                <p>Listings stay hidden until a visitor searches or applies filters. Use the search bar, category, or class filters to find matching educators.</p>
             </div>
         </div>
     </main>
