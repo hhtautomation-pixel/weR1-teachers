@@ -1,0 +1,5 @@
+Requirement ID,Created At,Class,Subjects,Email,Location,No Location Constraint,Contact Number,Notes,Status,Closed At
+REQ-20260417-101500,2026-04-17T10:15:00,Class 6 to 10,Maths + Science,parent1@example.com,CIT Road,No,9876543210,Need an experienced home tutor for evening classes five days a week.,Approved,
+REQ-20260416-183000,2026-04-16T18:30:00,Class 11,Accounts + Economics,parent2@example.com,,Yes,9123456780,Commerce tutor needed for board exam preparation and revision planning.,Approved,
+REQ-20260412-120000,2026-04-12T12:00:00,Class 4,All Subjects,parent3@example.com,Entally,No,9988776655,Looking for a patient teacher for foundational support after school.,Closed,2026-04-15T11:00:00
+REQ-20260411-091500,2026-04-11T09:15:00,Class 8,English + History,parent4@example.com,Sealdah,No,9090909090,Weekend-only tutor requirement. Parent prefers demo class before confirming.,Pending,

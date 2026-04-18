@@ -1,6 +1,9 @@
 // --- CONFIGURATION ---
 // 1. For Reading Data: The CSV URL of your published Google Sheet
-const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?output=csv";
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?gid=0&single=true&output=csv";
+
+// 1b. For Reading Requirement Notices: replace this local sample with the published Requirements-tab CSV URL
+const REQUIREMENTS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?gid=1772117371&single=true&output=csv";
 
 // 2. For Writing Data: The Web App URL of your deployed Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8uNCOMiRgnYNaUSHGUJkUA3mZODDEh_MM7sW-dy33QGjsdCIQg7hLlEnvWbGPxnj9/exec";
@@ -10,6 +13,7 @@ const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8uNCOM
 
 // Globals
 let tutorsData = [];
+let requirementsData = [];
 let activeTabCategory = '';
 let activeClassChip = 'All';
 let hasCommittedSearch = false;
@@ -25,6 +29,16 @@ const teachersCount = document.getElementById('teachersCount');
 const centersCount = document.getElementById('centersCount');
 const locationsCount = document.getElementById('locationsCount');
 const subjectsCount = document.getElementById('subjectsCount');
+const requirementsLoader = document.getElementById('requirementsLoader');
+const requirementsContent = document.getElementById('requirementsContent');
+const requirementsEmpty = document.getElementById('requirementsEmpty');
+const requirementsSetup = document.getElementById('requirementsSetup');
+const featuredRequirementCard = document.getElementById('featuredRequirementCard');
+const openRequirementsList = document.getElementById('openRequirementsList');
+const closedRequirementsList = document.getElementById('closedRequirementsList');
+const openRequirementsCount = document.getElementById('openRequirementsCount');
+const closedRequirementsCount = document.getElementById('closedRequirementsCount');
+const postRequirementTriggers = document.querySelectorAll('#postRequirementBtn, #mobilePostRequirementBtn, #postRequirementInlineBtn, #postRequirementInlineBtnSecondary');
 
 // Inputs
 const searchInput = document.getElementById('searchInput');
@@ -34,16 +48,44 @@ const searchBtn = document.getElementById('searchBtn');
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
 const submitSpinner = document.getElementById('submitSpinner');
+const joinBtn = document.getElementById('joinBtn');
+const joinModal = document.getElementById('joinModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const successCloseBtn = document.getElementById('successCloseBtn');
+const tutorForm = document.getElementById('tutorForm');
+const submitBtn = document.getElementById('submitBtn');
+const submitText = document.getElementById('submitText');
+const modalFormContent = document.getElementById('modalFormContent');
+const modalSuccessContent = document.getElementById('modalSuccessContent');
+const requirementSubmitSpinner = document.getElementById('requirementSubmitSpinner');
 
 // Mobile Nav Elements
 const mobileMenu = document.getElementById('mobileMenu');
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const mobileMenuClose = document.getElementById('mobileMenuClose');
 const mobileJoinBtn = document.getElementById('mobileJoinBtn');
+const postRequirementBtn = document.getElementById('postRequirementBtn');
+const mobilePostRequirementBtn = document.getElementById('mobilePostRequirementBtn');
+const postRequirementInlineBtn = document.getElementById('postRequirementInlineBtn');
+const requirementModal = document.getElementById('requirementModal');
+const requirementForm = document.getElementById('requirementForm');
+const requirementFormContent = document.getElementById('requirementFormContent');
+const requirementSuccessContent = document.getElementById('requirementSuccessContent');
+const closeRequirementModalBtn = document.getElementById('closeRequirementModalBtn');
+const requirementSuccessCloseBtn = document.getElementById('requirementSuccessCloseBtn');
+const requirementSubmitBtn = document.getElementById('requirementSubmitBtn');
+const requirementSubmitText = document.getElementById('requirementSubmitText');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    fetchData();
+    if (tutorsGrid && loader && resultsCount) {
+        fetchData();
+    }
+
+    if (requirementsLoader && featuredRequirementCard) {
+        fetchRequirementsData();
+    }
+
     setupEventListeners();
 });
 
@@ -68,6 +110,29 @@ function fetchData() {
         resultsCount.textContent = "Configuration Missing: Please provide a Google Sheet URL.";
         hideLoader();
     }
+}
+
+function fetchRequirementsData() {
+    showRequirementsLoader();
+
+    if (!REQUIREMENTS_SHEET_CSV_URL || REQUIREMENTS_SHEET_CSV_URL.trim() === "") {
+        showRequirementsSetup();
+        return;
+    }
+
+    Papa.parse(REQUIREMENTS_SHEET_CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+            requirementsData = results.data;
+            renderRequirements();
+        },
+        error: function (error) {
+            console.error("Error fetching requirements sheet:", error);
+            showRequirementsEmpty("Could not load the requirements board right now.");
+        }
+    });
 }
 
 function processData(data) {
@@ -156,6 +221,10 @@ function renderTutors(dataToRender) {
 }
 
 function updateStats() {
+    if (!teachersCount || !centersCount || !locationsCount || !subjectsCount) {
+        return;
+    }
+
     const approvedTutors = getApprovedTutors();
     const teacherTotal = approvedTutors.filter(tutor => tutor['Category'] === 'Tuition Teacher').length;
     const centerTotal = approvedTutors.filter(tutor => tutor['Category'] === 'Coaching Center').length;
@@ -173,62 +242,276 @@ function updateStats() {
     subjectsCount.textContent = uniqueSubjects.size;
 }
 
+function renderRequirements() {
+    if (!featuredRequirementCard || !openRequirementsList || !closedRequirementsList) {
+        return;
+    }
+
+    const openRequirements = getRequirementsByStatus(["approved", "open"]);
+    const closedRequirements = getRequirementsByStatus(["closed"]);
+
+    openRequirements.sort((a, b) => parseRequirementDate(b) - parseRequirementDate(a));
+    closedRequirements.sort((a, b) => parseRequirementDate(b) - parseRequirementDate(a));
+
+    hideRequirementsFeedbackStates();
+
+    if (openRequirements.length === 0 && closedRequirements.length === 0) {
+        showRequirementsEmpty("No approved or closed requirements are available yet.");
+        return;
+    }
+
+    const featuredRequirement = openRequirements[0] || closedRequirements[0];
+    featuredRequirementCard.innerHTML = buildFeaturedRequirementMarkup(featuredRequirement);
+
+    openRequirementsList.innerHTML = openRequirements.length
+        ? openRequirements.map(requirement => buildRequirementCardMarkup(requirement, false)).join("")
+        : `<div class="requirement-card"><h4>No Open Requirements</h4><p class="requirement-summary">Approved teaching requirements will appear here as soon as they are available.</p></div>`;
+
+    closedRequirementsList.innerHTML = closedRequirements.length
+        ? closedRequirements.map(requirement => buildRequirementCardMarkup(requirement, true)).join("")
+        : `<div class="requirement-card closed-card"><h4>No Closed Requirements Yet</h4><p class="requirement-summary">Closed notices will appear here once the admin marks a requirement as closed.</p></div>`;
+
+    openRequirementsCount.textContent = `${openRequirements.length} Open`;
+    closedRequirementsCount.textContent = `${closedRequirements.length} Closed`;
+    requirementsContent.classList.remove('hidden');
+    requirementsLoader.classList.add('hidden');
+}
+
+function getRequirementsByStatus(validStatuses) {
+    return requirementsData.filter(requirement => {
+        const status = (requirement['Status'] || '').toLowerCase().trim();
+        return validStatuses.includes(status);
+    });
+}
+
+function parseRequirementDate(requirement) {
+    const createdAt = requirement['Created At'] || requirement['CreatedAt'] || requirement['Timestamp'] || '';
+    const parsed = new Date(createdAt);
+    return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+}
+
+function buildFeaturedRequirementMarkup(requirement) {
+    if (!requirement) {
+        return `
+            <div class="featured-meta">
+                <span class="meta-pill">No Featured Notice</span>
+            </div>
+            <h3>The latest approved requirement will appear here.</h3>
+            <p class="featured-summary">As soon as the admin approves a submitted requirement, it will be highlighted in this area.</p>
+        `;
+    }
+
+    const status = getRequirementStatus(requirement);
+
+    return `
+        <div class="featured-meta">
+            <span class="meta-pill ${status === 'Closed' ? 'status-closed' : 'status-open'}">${status}</span>
+            <span class="meta-pill"><i class="fa-regular fa-clock"></i>${formatRequirementDate(requirement)}</span>
+        </div>
+        <h3>${buildRequirementTitle(requirement)}</h3>
+        <p class="featured-summary">${escapeHtml(requirement['Notes'] || 'A newly submitted requirement approved by the admin and ready for tutor responses.')}</p>
+        <div class="featured-details">
+            ${buildRequirementDetailsMarkup(requirement)}
+        </div>
+        <div class="featured-actions">
+            <a href="tel:${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || '')}" class="action-btn connect-btn">
+                <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || 'Now')}
+            </a>
+        </div>
+    `;
+}
+
+function buildRequirementCardMarkup(requirement, isClosed) {
+    const status = getRequirementStatus(requirement);
+
+    return `
+        <article class="requirement-card ${isClosed ? 'closed-card' : ''}">
+            <div class="requirement-meta">
+                <span class="meta-pill ${status === 'Closed' ? 'status-closed' : 'status-open'}">${status}</span>
+                <span class="meta-pill"><i class="fa-regular fa-clock"></i>${formatRequirementDate(requirement)}</span>
+            </div>
+            <h4>${buildRequirementTitle(requirement)}</h4>
+            <p class="requirement-summary">${escapeHtml(requirement['Notes'] || 'No additional note provided.')}</p>
+            <div class="requirement-details">
+                ${buildRequirementDetailsMarkup(requirement)}
+            </div>
+            <div class="requirement-actions">
+                <a href="tel:${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || '')}" class="action-btn connect-btn">
+                    <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call
+                </a>
+            </div>
+        </article>
+    `;
+}
+
+function buildRequirementDetailsMarkup(requirement) {
+    const requirementClass = requirement['Class'] || 'Not specified';
+    const subjects = requirement['Subjects'] || 'Not specified';
+    const location = getRequirementLocation(requirement);
+    const contact = requirement['Contact Number'] || requirement['Contact'] || 'Not specified';
+
+    return `
+        <div class="requirement-detail">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <div><strong>CLASS</strong><span>${escapeHtml(requirementClass)}</span></div>
+        </div>
+        <div class="requirement-detail">
+            <i class="fa-solid fa-book-open"></i>
+            <div><strong>SUBJECTS</strong><span>${escapeHtml(subjects)}</span></div>
+        </div>
+        <div class="requirement-detail">
+            <i class="fa-solid fa-location-dot"></i>
+            <div><strong>LOCATION</strong><span>${escapeHtml(location)}</span></div>
+        </div>
+        <div class="requirement-detail">
+            <i class="fa-solid fa-phone"></i>
+            <div><strong>CONTACT</strong><span>${escapeHtml(contact)}</span></div>
+        </div>
+    `;
+}
+
+function buildRequirementTitle(requirement) {
+    const requirementClass = requirement['Class'] || 'Class Not Mentioned';
+    const subjects = requirement['Subjects'] || 'Subject Not Mentioned';
+    const location = getRequirementLocation(requirement);
+    return `Teacher Required - ${escapeHtml(requirementClass)} - ${escapeHtml(subjects)} - ${escapeHtml(location)}`;
+}
+
+function getRequirementLocation(requirement) {
+    const noLocationConstraint = String(requirement['No Location Constraint'] || requirement['NoLocationConstraint'] || '')
+        .toLowerCase()
+        .trim();
+
+    if (noLocationConstraint === 'yes' || noLocationConstraint === 'true') {
+        return 'No Location Constraint';
+    }
+
+    return requirement['Location'] || 'Location Not Mentioned';
+}
+
+function formatRequirementDate(requirement) {
+    const timestamp = parseRequirementDate(requirement);
+    if (!timestamp) {
+        return 'Recently added';
+    }
+
+    return new Date(timestamp).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+function getRequirementStatus(requirement) {
+    const status = (requirement['Status'] || '').toLowerCase().trim();
+    return status === 'closed' ? 'Closed' : 'Open';
+}
+
+function showRequirementsLoader() {
+    if (!requirementsLoader || !requirementsContent || !requirementsEmpty || !requirementsSetup) {
+        return;
+    }
+
+    requirementsLoader.classList.remove('hidden');
+    requirementsContent.classList.add('hidden');
+    requirementsEmpty.classList.add('hidden');
+    requirementsSetup.classList.add('hidden');
+}
+
+function showRequirementsEmpty(message) {
+    if (!requirementsLoader || !requirementsContent || !requirementsEmpty || !requirementsSetup) {
+        return;
+    }
+
+    requirementsLoader.classList.add('hidden');
+    requirementsContent.classList.add('hidden');
+    requirementsSetup.classList.add('hidden');
+    requirementsEmpty.classList.remove('hidden');
+
+    const emptyParagraph = requirementsEmpty.querySelector('p');
+    if (emptyParagraph && message) {
+        emptyParagraph.textContent = message;
+    }
+}
+
+function showRequirementsSetup() {
+    if (!requirementsLoader || !requirementsContent || !requirementsEmpty || !requirementsSetup) {
+        return;
+    }
+
+    requirementsLoader.classList.add('hidden');
+    requirementsContent.classList.add('hidden');
+    requirementsEmpty.classList.add('hidden');
+    requirementsSetup.classList.remove('hidden');
+}
+
+function hideRequirementsFeedbackStates() {
+    if (!requirementsLoader || !requirementsEmpty || !requirementsSetup) {
+        return;
+    }
+
+    requirementsLoader.classList.add('hidden');
+    requirementsEmpty.classList.add('hidden');
+    requirementsSetup.classList.add('hidden');
+}
+
 function setupEventListeners() {
-    categoryFilter.addEventListener('change', () => {
-        activeTabCategory = categoryFilter.value;
-        hasCommittedSearch = hasActiveCriteria();
-        applyFilters();
-    });
+    if (categoryFilter && classFilter && searchBtn && searchInput && clearFiltersBtn && activeFiltersContainer) {
+        categoryFilter.addEventListener('change', () => {
+            activeTabCategory = categoryFilter.value;
+            hasCommittedSearch = hasActiveCriteria();
+            applyFilters();
+        });
 
-    classFilter.addEventListener('change', () => {
-        activeClassChip = classFilter.value || 'All';
-        hasCommittedSearch = hasActiveCriteria();
-        applyFilters();
-    });
+        classFilter.addEventListener('change', () => {
+            activeClassChip = classFilter.value || 'All';
+            hasCommittedSearch = hasActiveCriteria();
+            applyFilters();
+        });
 
-    searchBtn.addEventListener('click', () => {
-        hasCommittedSearch = true;
-        applyFilters();
-    });
-
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        searchBtn.addEventListener('click', () => {
             hasCommittedSearch = true;
             applyFilters();
-        }
-    });
+        });
 
-    clearFiltersBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        categoryFilter.value = '';
-        classFilter.value = '';
-        activeTabCategory = '';
-        activeClassChip = 'All';
-        hasCommittedSearch = false;
-        applyFilters();
-    });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                hasCommittedSearch = true;
+                applyFilters();
+            }
+        });
 
-    // Handle clicking X on tags to clear specific filters
-    activeFiltersContainer.addEventListener('click', (e) => {
-        const tag = e.target.closest('.filter-tag');
-        if (!tag) return;
-
-        const type = tag.getAttribute('data-type');
-        if (type === 'search') {
+        clearFiltersBtn.addEventListener('click', () => {
             searchInput.value = '';
-        }
-        if (type === 'category') {
             categoryFilter.value = '';
-            activeTabCategory = '';
-        }
-        if (type === 'class') {
             classFilter.value = '';
+            activeTabCategory = '';
             activeClassChip = 'All';
-        }
+            hasCommittedSearch = false;
+            applyFilters();
+        });
 
-        hasCommittedSearch = hasActiveCriteria();
-        applyFilters();
-    });
+        activeFiltersContainer.addEventListener('click', (e) => {
+            const tag = e.target.closest('.filter-tag');
+            if (!tag) return;
+
+            const type = tag.getAttribute('data-type');
+            if (type === 'search') {
+                searchInput.value = '';
+            }
+            if (type === 'category') {
+                categoryFilter.value = '';
+                activeTabCategory = '';
+            }
+            if (type === 'class') {
+                classFilter.value = '';
+                activeClassChip = 'All';
+            }
+
+            hasCommittedSearch = hasActiveCriteria();
+            applyFilters();
+        });
+    }
 
     // MOBILE MENU LOGIC
     if (mobileMenuToggle) {
@@ -250,9 +533,29 @@ function setupEventListeners() {
             mobileMenu.classList.remove('active');
         });
     });
+
+    postRequirementTriggers.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            if (!requirementModal) {
+                return;
+            }
+
+            e.preventDefault();
+
+            if (mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+
+            openRequirementModal();
+        });
+    });
 }
 
 function applyFilters() {
+    if (!searchInput || !activeFiltersContainer || !resultsCount || !tutorsGrid || !noResults || !searchPrompt) {
+        return;
+    }
+
     const searchTerm = searchInput.value.toLowerCase().trim();
 
     // Use the global state which is now synced with both Tabs and Dropdowns
@@ -303,6 +606,10 @@ function hasActiveCriteria() {
 }
 
 function renderPrivateState() {
+    if (!tutorsGrid || !noResults || !searchPrompt || !resultsCount) {
+        return;
+    }
+
     tutorsGrid.innerHTML = '';
     tutorsGrid.classList.add('hidden');
     noResults.classList.add('hidden');
@@ -321,7 +628,20 @@ function splitMultiValueField(value) {
         .filter(Boolean);
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function updateActiveFiltersTags(search, cat, cls) {
+    if (!activeFiltersContainer) {
+        return;
+    }
+
     activeFiltersContainer.innerHTML = '';
 
     const createTag = (text, type) => {
@@ -355,6 +675,22 @@ function closeModal() {
     }, 400);
 }
 
+function openRequirementModal() {
+    requirementModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRequirementModal() {
+    requirementModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+
+    setTimeout(() => {
+        requirementForm.reset();
+        requirementFormContent.classList.remove('hidden');
+        requirementSuccessContent.classList.add('hidden');
+    }, 400);
+}
+
 // Event Listeners for Modal
 if (joinBtn) joinBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
 if (mobileJoinBtn) mobileJoinBtn.addEventListener('click', (e) => { 
@@ -364,11 +700,16 @@ if (mobileJoinBtn) mobileJoinBtn.addEventListener('click', (e) => {
 });
 if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 if (successCloseBtn) successCloseBtn.addEventListener('click', closeModal);
+if (closeRequirementModalBtn) closeRequirementModalBtn.addEventListener('click', closeRequirementModal);
+if (requirementSuccessCloseBtn) requirementSuccessCloseBtn.addEventListener('click', closeRequirementModal);
 
 // Close on outside click
 window.addEventListener('click', (e) => {
     if (e.target === joinModal) {
         closeModal();
+    }
+    if (e.target === requirementModal) {
+        closeRequirementModal();
     }
 });
 
@@ -384,6 +725,7 @@ if (tutorForm) {
 
         // Gather form data
         const formData = new FormData();
+        formData.append('formType', 'tutor_registration');
         formData.append('Name', document.getElementById('regName').value);
         formData.append('Category', document.getElementById('regCategory').value);
         formData.append('Classes', document.getElementById('regClasses').value);
@@ -416,10 +758,55 @@ if (tutorForm) {
     });
 }
 
+if (requirementForm) {
+    requirementForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        requirementSubmitBtn.disabled = true;
+        requirementSubmitText.textContent = "Submitting...";
+        requirementSubmitSpinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('formType', 'requirement_submission');
+        formData.append('Class', document.getElementById('reqClass').value);
+        formData.append('Subjects', document.getElementById('reqSubjects').value);
+        formData.append('Email', document.getElementById('reqEmail').value);
+        formData.append('Location', document.getElementById('reqLocation').value);
+        formData.append('NoLocationConstraint', document.getElementById('reqNoLocation').checked ? 'Yes' : 'No');
+        formData.append('ContactNumber', document.getElementById('reqContact').value);
+        formData.append('Notes', document.getElementById('reqNotes').value);
+
+        if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.trim() === "") {
+            alert("Requirement Error: Admin has not configured the form submission URL.");
+            resetRequirementSubmitBtn();
+            return;
+        }
+
+        fetch(GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: formData
+        })
+            .then(() => {
+                showRequirementSuccess();
+            })
+            .catch(error => {
+                console.error("Error submitting requirement:", error);
+                alert("There was an error submitting the requirement. Please try again.");
+                resetRequirementSubmitBtn();
+            });
+    });
+}
+
 function showSuccess() {
     modalFormContent.classList.add('hidden');
     modalSuccessContent.classList.remove('hidden');
     resetSubmitBtn();
+}
+
+function showRequirementSuccess() {
+    requirementFormContent.classList.add('hidden');
+    requirementSuccessContent.classList.remove('hidden');
+    resetRequirementSubmitBtn();
 }
 
 function resetSubmitBtn() {
@@ -428,8 +815,18 @@ function resetSubmitBtn() {
     submitSpinner.classList.add('hidden');
 }
 
+function resetRequirementSubmitBtn() {
+    requirementSubmitBtn.disabled = false;
+    requirementSubmitText.textContent = "Submit Requirement";
+    requirementSubmitSpinner.classList.add('hidden');
+}
+
 // Utils
 function showLoader() {
+    if (!loader || !tutorsGrid || !noResults || !searchPrompt) {
+        return;
+    }
+
     loader.classList.remove('hidden');
     tutorsGrid.classList.add('hidden');
     noResults.classList.add('hidden');
@@ -437,5 +834,7 @@ function showLoader() {
 }
 
 function hideLoader() {
-    loader.classList.add('hidden');
+    if (loader) {
+        loader.classList.add('hidden');
+    }
 }

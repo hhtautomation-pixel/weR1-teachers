@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements | weR1 Tutors & Teachers</title>
+
+    <meta name="description" content="View open and closed tutor requirements posted by families and students.">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+
+    <header class="glass-header">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-text">we<span class="highlight">R</span>1 <span class="sub-logo">Tutors</span></span>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">Search</a>
+                <a href="requirements.html" class="active">Requirements</a>
+                <a href="#">How it Works</a>
+                <a href="#" class="btn-primary" id="postRequirementBtn">Post Requirement</a>
+                <a href="#" class="btn-primary" id="joinBtn">Join as Tutor</a>
+            </nav>
+
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle Menu">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="mobile-menu-overlay" id="mobileMenu">
+        <div class="mobile-menu-content">
+            <button class="mobile-menu-close" id="mobileMenuClose"><i class="fa-solid fa-xmark"></i></button>
+            <div class="mobile-nav-links">
+                <a href="index.html" class="mobile-nav-item">Search</a>
+                <a href="requirements.html" class="mobile-nav-item active">Requirements</a>
+                <a href="#" class="mobile-nav-item">How it Works</a>
+                <a href="#" class="btn-primary" id="mobilePostRequirementBtn">Post Requirement</a>
+                <a href="#" class="btn-primary" id="mobileJoinBtn">Join as Tutor</a>
+            </div>
+        </div>
+    </div>
+
+    <section class="hero requirements-page-hero">
+        <div class="hero-content">
+            <span class="section-kicker">Teacher Notice Board</span>
+            <h1 class="fade-up">Find Active <span class="gradient-text">Teaching Requirements</span></h1>
+            <p class="fade-up delay-1">Browse open tutor notices, review recently closed requirements, and post a new requirement for admin approval.</p>
+            <div class="requirements-page-actions fade-up delay-2">
+                <a href="#requirementsBoard" class="btn-secondary">View Notices</a>
+                <button class="btn-primary" id="postRequirementInlineBtn">Post Requirement</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="requirements-section" id="requirementsBoard">
+        <div class="container">
+            <div class="requirements-hero">
+                <div>
+                    <span class="section-kicker">Live Requirement Feed</span>
+                    <h2>Open Requirements From Families & Students</h2>
+                    <p>Newest approved requirements are highlighted first. Once a need is fulfilled, the admin can mark it closed and it moves to the archive below.</p>
+                </div>
+                <button class="btn-primary" id="postRequirementInlineBtnSecondary">Post Requirement</button>
+            </div>
+
+            <div id="requirementsLoader" class="loader-container">
+                <div class="spinner"></div>
+                <p>Loading open requirements...</p>
+            </div>
+
+            <div id="requirementsContent" class="hidden">
+                <div class="requirements-grid">
+                    <article class="featured-requirement glass-panel" id="featuredRequirementCard"></article>
+
+                    <aside class="requirements-side-panel">
+                        <div class="requirements-side-header">
+                            <h3>Open Requirements</h3>
+                            <span id="openRequirementsCount">0 Open</span>
+                        </div>
+                        <div class="requirements-list" id="openRequirementsList"></div>
+                    </aside>
+                </div>
+
+                <div class="closed-requirements-panel">
+                    <div class="requirements-side-header">
+                        <h3>Closed Requirements</h3>
+                        <span id="closedRequirementsCount">0 Closed</span>
+                    </div>
+                    <div class="requirements-list closed-list" id="closedRequirementsList"></div>
+                </div>
+            </div>
+
+            <div id="requirementsEmpty" class="no-results hidden">
+                <i class="fa-solid fa-bullhorn"></i>
+                <h3>No Requirement Notices Yet</h3>
+                <p>The notice board is ready. Once the admin approves submitted requirements, they will appear here.</p>
+            </div>
+
+            <div id="requirementsSetup" class="no-results hidden">
+                <i class="fa-solid fa-gear"></i>
+                <h3>Requirements Board Needs Setup</h3>
+                <p>Add and publish the new Requirements sheet tab, then connect its CSV URL in <code>app.js</code> to activate this feature.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 weR1 Tutors & Teachers. Empowering Education.</p>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="joinModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button>
+
+            <div id="modalFormContent">
+                <div class="modal-header">
+                    <h2>Join as Tutor</h2>
+                    <p>Register to be listed in our directory. Pending admin approval.</p>
+                </div>
+
+                <form id="tutorForm">
+                    <div class="form-group">
+                        <label for="regName">Full Name</label>
+                        <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regCategory">Category</label>
+                        <select id="regCategory" class="form-input" required>
+                            <option value="">Select Category</option>
+                            <option value="Tuition Teacher">Tuition Teacher</option>
+                            <option value="Coaching Center">Coaching Center</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regClasses">Classes Taught</label>
+                        <input type="text" id="regClasses" class="form-input" required placeholder="e.g., 6 to 10, 11 to 12">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regSubjects">Subjects</label>
+                        <input type="text" id="regSubjects" class="form-input" required placeholder="e.g., Maths, Science">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regArea">Area / Location</label>
+                        <input type="text" id="regArea" class="form-input" required placeholder="e.g., Park Circus">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regPhone">Phone Number</label>
+                        <input type="tel" id="regPhone" class="form-input" required pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number" placeholder="e.g. 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regEmail">Email Address</label>
+                        <input type="email" id="regEmail" class="form-input" required placeholder="e.g. ahsan@example.com">
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-block" id="submitBtn">
+                        <span id="submitText">Submit Registration</span>
+                        <i class="fa-solid fa-spinner fa-spin hidden" id="submitSpinner"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div id="modalSuccessContent" class="hidden">
+                <div class="success-message">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h2>Registration Sent!</h2>
+                    <p>Your details have been submitted successfully. Once the Admin verifies and approves your listing, it will appear in the directory.</p>
+                    <button class="btn-primary btn-block mt-2" id="successCloseBtn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="requirementModal">
+        <div class="modal-content modal-content-wide">
+            <button class="modal-close" id="closeRequirementModalBtn"><i class="fa-solid fa-xmark"></i></button>
+
+            <div id="requirementFormContent">
+                <div class="modal-header">
+                    <h2>Post a Requirement</h2>
+                    <p>Share a teaching requirement. It will appear on the notice board after admin approval.</p>
+                </div>
+
+                <form id="requirementForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="reqClass">Class</label>
+                            <input type="text" id="reqClass" class="form-input" required placeholder="e.g., Class 6 to 10">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reqSubjects">Subjects</label>
+                            <input type="text" id="reqSubjects" class="form-input" required placeholder="e.g., All Subjects / Maths + Science">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reqEmail">Email Address</label>
+                            <input type="email" id="reqEmail" class="form-input" required placeholder="e.g. parent@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reqContact">Contact Number</label>
+                            <input type="tel" id="reqContact" class="form-input" required pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number" placeholder="e.g. 9876543210">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reqLocation">Location</label>
+                            <input type="text" id="reqLocation" class="form-input" placeholder="e.g., Park Circus / CIT Road">
+                            <label class="inline-check" for="reqNoLocation">
+                                <input type="checkbox" id="reqNoLocation">
+                                <span>No location constraint</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reqNotes">Notes</label>
+                        <textarea id="reqNotes" class="form-input form-textarea" rows="4" placeholder="Add a short note, timing preference, board, or any specific teaching requirement."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-block" id="requirementSubmitBtn">
+                        <span id="requirementSubmitText">Submit Requirement</span>
+                        <i class="fa-solid fa-spinner fa-spin hidden" id="requirementSubmitSpinner"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div id="requirementSuccessContent" class="hidden">
+                <div class="success-message">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h2>Requirement Submitted</h2>
+                    <p>Your requirement has been sent successfully. It will appear on the public notice board after admin approval.</p>
+                    <button class="btn-primary btn-block mt-2" id="requirementSuccessCloseBtn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

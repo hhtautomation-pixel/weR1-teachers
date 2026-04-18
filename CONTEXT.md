@@ -17,16 +17,22 @@ The application follows a **Serverless Architecture**, using Google Sheets as a 
 - **Google Sheet Powered Stats**: The top section displays live aggregate counts for tuition teachers, coaching centers, locations, and subjects, calculated from approved Google Sheet rows.
 - **Approval-Based Visibility**: New registrations submitted through the form stay hidden until the Admin marks them as `Approved` in the Google Sheet.
 - **Search & Filter Matching**: Results are shown based on search text plus selected filters such as category and class.
+- **Dedicated Requirements Notice Board**: Tutor requirements now live on a separate `Requirements` page, with open and closed notices shown in a premium board layout.
+- **Requirement Submission Flow**: Visitors can post a requirement through a dedicated modal form, and the requirement appears publicly only after admin approval.
 - **Premium Aesthetics**: Emerald green and gold academic styling with glassmorphism, responsive cards, and polished spacing.
 
 ---
 
 ## Current UX Direction
-- The top navigation is now framed around **Search**, not a public directory.
+- The website now has **two clear public pages**:
+  - `index.html` for tutor search
+  - `requirements.html` for the requirements notice board
+- The top navigation is framed around **Search** and **Requirements**, not a public directory.
 - The statistics strip appears **above** the main hero heading.
-- The public experience is intentionally **search-first**, not browse-first.
-- The older lower-page category browsing strip and chip-based discovery controls have been removed from the active UI for now.
-- The search results section behaves like a normal results area rather than a browsable directory landing page.
+- The homepage is intentionally **search-first**, not browse-first.
+- The older lower-page category browsing strip and chip-based discovery controls have been removed from the active UI.
+- The requirements notice board is intentionally **not** shown on the homepage anymore.
+- The top `Post Requirement` action now routes users to the dedicated requirements page, where requirement notices and the posting modal live.
 
 ---
 
@@ -42,25 +48,47 @@ The application follows a **Serverless Architecture**, using Google Sheets as a 
 ---
 
 ## File Structure
-- `index.html`: Core structure including the fixed header, hero section, live stats panel, search form, results section, and registration modal.
-- `styles.css`: Custom design tokens, glassmorphic UI components, hero/stats layout, responsive styles, and card presentation.
-- `app.js`: Application state management, Google Sheet CSV parsing, approved-row filtering, search/results rendering, stats calculation, and form submission handlers.
-- `code.gs`: The Google Apps Script backend that lives within the Google Sheet to handle incoming form data.
+- `index.html`: Search-only homepage with stats, hero, tutor search form, search results, and tutor registration modal.
+- `requirements.html`: Dedicated requirements page with the notice-board layout, open/closed requirement sections, and requirement submission modal.
+- `styles.css`: Shared design system, search-page styling, requirements-page styling, responsive layouts, cards, and modal presentation.
+- `app.js`: Shared client-side logic for tutor search, stats, requirement board fetching/rendering, and both tutor/requirement form submission handlers.
+- `code.gs`: Google Apps Script router that handles multiple form types and writes to the correct sheet tab.
 - `google_sheets_setup_guide.md`: Detailed instructions for the Admin to connect their own sheet.
+- `requirements-sample.csv`: Local sample requirements data used for local preview/testing until the real requirements CSV is connected.
 
 ---
 
 ## Google Sheet Architecture
-The application expects a Google Sheet with the following headers in **Row 1**:
+The app now expects **separate sheet tabs** for tutors and requirements.
+
+### Tutors Tab
+Suggested tab name: `Tutors`
+
+Headers in **Row 1**:
 1. `Name`
 2. `Category` (`Tuition Teacher` or `Coaching Center`)
 3. `Classes Taught` (e.g. `1 to 5`, `11 to 12`)
 4. `Subjects Taught`
 5. `Area`
-6. `Contact`
-7. `Status` (`Approved` or `Pending`)
+6. `Phone`
+7. `Email`
+8. `Status` (`Approved` or `Pending`)
 
-If email and phone are being used in the UI or form pipeline, those fields should also remain aligned between the Google Sheet and Apps Script setup.
+### Requirements Tab
+Suggested tab name: `Requirements`
+
+Headers in **Row 1**:
+1. `Requirement ID`
+2. `Created At`
+3. `Class`
+4. `Subjects`
+5. `Email`
+6. `Location`
+7. `No Location Constraint`
+8. `Contact Number`
+9. `Notes`
+10. `Status`
+11. `Closed At`
 
 ---
 
@@ -69,13 +97,24 @@ If email and phone are being used in the UI or form pipeline, those fields shoul
 - Aggregate counts at the top of the page should also be calculated from approved rows only.
 - Search matching currently checks relevant text fields such as name, subjects, and area.
 - The website owner retains control over the complete dataset through the Google Sheet.
+- Requirement notices use this visibility workflow:
+  - `Pending` -> hidden from the public site
+  - `Approved` -> visible in the open requirements section
+  - `Closed` -> moved to the closed requirements section
+- Requirement ordering is newest first based on `Created At`.
+- If `No Location Constraint` is marked `Yes`, the public UI should display that instead of a specific location.
 
 ---
 
 ## Configuration
-The project is configured via two constants at the top of `app.js`:
+The project is configured via constants at the top of `app.js`:
 - `GOOGLE_SHEET_CSV_URL`: The "Publish to Web" CSV link of the Google Sheet.
+- `REQUIREMENTS_SHEET_CSV_URL`: The requirements CSV source. During local development this can point to `requirements-sample.csv`; in production it should point to the published Requirements-tab CSV.
 - `GOOGLE_APPS_SCRIPT_URL`: The "Web App" deployment URL of the Apps Script.
+
+In `code.gs`, the script also relies on:
+- `TUTORS_SHEET_NAME`
+- `REQUIREMENTS_SHEET_NAME`
 
 ---
 
@@ -84,4 +123,6 @@ The project is configured via two constants at the top of `app.js`:
 - [ ] **Direct WhatsApp Integration**: One-click messaging for immediate connectivity.
 - [ ] **Multi-City Support**: Expand `Area` filtering into city-wide segmentation.
 - [ ] **Profile Pages**: Dedicated URLs for individual teachers/centers.
-- [ ] **Revisit Discovery Controls**: Decide later whether category tabs or chip-based secondary navigation should return in any form.
+- [ ] **Tutor-Requirement Matching**: Automatically identify tutors matching a newly approved requirement.
+- [ ] **Email Outreach Automation**: Send requirement alerts to relevant tutors and log delivery status.
+- [ ] **Revisit Discovery Controls**: Decide later whether any secondary browsing/navigation controls should return in some form.
