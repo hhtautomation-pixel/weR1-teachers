@@ -21,7 +21,8 @@ jobs:
         run: npm install -g @google/clasp
 
       - name: Create Credential File
-        run: echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+        run: echo "${{ secrets.CLASPRC_JSON }}" > ~/.clasprc.json
+
 
       - name: Push Code
         run: clasp push -f
