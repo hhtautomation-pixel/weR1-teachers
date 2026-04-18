@@ -3,7 +3,7 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - main  # Verify if your branch is 'main' or 'master'
+      - main
 
 jobs:
   deploy:
@@ -25,3 +25,9 @@ jobs:
 
       - name: Push Code
         run: clasp push -f
+
+      - name: Deploy & Versioning
+        run: |
+          # Getting the current time in IST (India Standard Time)
+          TIMESTAMP=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %I:%M %p')
+          clasp deploy -i AKfycbx8uNCOMiRgnYNaUSHGUJkUA3mZODDEh_MM7sW-dy33QGjsdCIQg7hLlEnvWbGPxnj9 -d "GitHub Auto-Deploy: $TIMESTAMP"
