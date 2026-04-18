@@ -1,10 +1,11 @@
 var TUTORS_SHEET_NAME = "Tutors";
 var REQUIREMENTS_SHEET_NAME = "Requirements";
+var SPREADSHEET_ID = "111BKs-mtJk-fEx_fXGTIqsuAeH7HcAOo6-9gzfTVARk";
 
 function doGet(e) {
   try {
     var resource = (e.parameter.resource || "").trim();
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var spreadsheet = getSpreadsheet_();
 
     if (resource === "tutors") {
       return createJsonResponse_(getSheetRows_(spreadsheet, TUTORS_SHEET_NAME));
@@ -30,7 +31,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     var formType = (e.parameter.formType || "").trim();
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var spreadsheet = getSpreadsheet_();
 
     if (formType === "tutor_registration") {
       return handleTutorRegistration_(spreadsheet, e.parameter);
@@ -106,6 +107,27 @@ function handleRequirementSubmission_(spreadsheet, params) {
 
 function createRequirementId_() {
   return "REQ-" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd-HHmmss");
+}
+
+function getSpreadsheet_() {
+  var configuredSpreadsheetId = SPREADSHEET_ID;
+
+  if (!configuredSpreadsheetId) {
+    configuredSpreadsheetId = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID");
+  }
+
+  if (configuredSpreadsheetId) {
+    return SpreadsheetApp.openById(configuredSpreadsheetId);
+  }
+
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (activeSpreadsheet) {
+    return activeSpreadsheet;
+  }
+
+  throw new Error(
+    "Spreadsheet connection is not configured. Set SPREADSHEET_ID in code.gs or in Script Properties."
+  );
 }
 
 function getSheetRows_(spreadsheet, sheetName) {

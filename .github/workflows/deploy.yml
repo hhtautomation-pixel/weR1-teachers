@@ -23,6 +23,12 @@ jobs:
       - name: Create Credential File
         run: printf "%s" "${{ secrets.CLASPRC_JSON }}" | base64 --decode > ~/.clasprc.json
 
+      - name: Validate Apps Script Files
+        run: |
+          test -f .clasp.json
+          test -f appsscript.json
+          test -f code.gs
+
       - name: Push Code
         run: clasp push -f
 
