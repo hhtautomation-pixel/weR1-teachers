@@ -41,8 +41,9 @@ The application follows a **Serverless Architecture**, using Google Sheets as a 
 - **Typography**: Google Fonts (`Outfit` and `Inter`) for a premium, academic feel.
 - **Icons**: FontAwesome 6.
 - **Data Management**:
-  - **Reading**: Google Sheets published as CSV, parsed client-side using **PapaParse**.
-  - **Writing**: Google Apps Script (`doPost`) handling POST requests from the registration form.
+  - **Primary Reading**: Google Apps Script web app (`doGet`) serving tutor and requirement rows as JSON directly from named sheet tabs.
+  - **Fallback Reading**: Google Sheets published as CSV, parsed client-side using **PapaParse** when needed.
+  - **Writing**: Google Apps Script (`doPost`) handling POST requests from tutor registration and requirement submission forms.
 - **Deployment**: Hosted on GitHub/Netlify for fast, globally distributed access.
 
 ---
@@ -108,13 +109,19 @@ Headers in **Row 1**:
 
 ## Configuration
 The project is configured via constants at the top of `app.js`:
-- `GOOGLE_SHEET_CSV_URL`: The "Publish to Web" CSV link of the Google Sheet.
-- `REQUIREMENTS_SHEET_CSV_URL`: The requirements CSV source. During local development this can point to `requirements-sample.csv`; in production it should point to the published Requirements-tab CSV.
+- `GOOGLE_SHEET_CSV_URL`: Tutors CSV fallback link.
+- `REQUIREMENTS_SHEET_CSV_URL`: Requirements CSV fallback/source. During local development this can point to `requirements-sample.csv`; in production it can point to the published Requirements-tab CSV.
 - `GOOGLE_APPS_SCRIPT_URL`: The "Web App" deployment URL of the Apps Script.
 
 In `code.gs`, the script also relies on:
 - `TUTORS_SHEET_NAME`
 - `REQUIREMENTS_SHEET_NAME`
+
+Current integration expectation:
+- The deployed Apps Script web app should support:
+  - `?resource=tutors`
+  - `?resource=requirements`
+- The frontend uses these Apps Script read endpoints first and only falls back to CSV if needed.
 
 ---
 

@@ -1,6 +1,32 @@
 var TUTORS_SHEET_NAME = "Tutors";
 var REQUIREMENTS_SHEET_NAME = "Requirements";
 
+function doGet(e) {
+  try {
+    var resource = (e.parameter.resource || "").trim();
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+    if (resource === "tutors") {
+      return createJsonResponse_(getSheetRows_(spreadsheet, TUTORS_SHEET_NAME));
+    }
+
+    if (resource === "requirements") {
+      return createJsonResponse_(getSheetRows_(spreadsheet, REQUIREMENTS_SHEET_NAME));
+    }
+
+    return createJsonResponse_({
+      ok: true,
+      message: "Apps Script endpoint is live.",
+      availableResources: ["tutors", "requirements"]
+    });
+  } catch (error) {
+    return createJsonResponse_({
+      ok: false,
+      error: error.message
+    });
+  }
+}
+
 function doPost(e) {
   try {
     var formType = (e.parameter.formType || "").trim();
@@ -80,4 +106,38 @@ function handleRequirementSubmission_(spreadsheet, params) {
 
 function createRequirementId_() {
   return "REQ-" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd-HHmmss");
+}
+
+function getSheetRows_(spreadsheet, sheetName) {
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    throw new Error(sheetName + " sheet not found.");
+  }
+
+  var values = sheet.getDataRange().getValues();
+  if (!values || values.length < 2) {
+    return [];
+  }
+
+  var headers = values[0];
+  var rows = [];
+
+  for (var i = 1; i < values.length; i++) {
+    var rowValues = values[i];
+    var rowObject = {};
+
+    for (var j = 0; j < headers.length; j++) {
+      rowObject[headers[j]] = rowValues[j];
+    }
+
+    rows.push(rowObject);
+  }
+
+  return rows;
+}
+
+function createJsonResponse_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
 }

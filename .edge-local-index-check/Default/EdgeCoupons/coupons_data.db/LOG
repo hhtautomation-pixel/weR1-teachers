@@ -1,0 +1,5 @@
+2026/04/18-13:34:13.548 6028 Creating DB C:\Users\MIRAN AHMED\Desktop\infimode\weR1\.edge-local-index-check\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/04/18-13:34:13.557 6028 Reusing MANIFEST C:\Users\MIRAN AHMED\Desktop\infimode\weR1\.edge-local-index-check\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/18-13:34:13.745 1254 Level-0 table #5: started
+2026/04/18-13:34:13.748 1254 Level-0 table #5: 682109 bytes OK
+2026/04/18-13:34:13.750 1254 Delete type=0 #3
