@@ -1,5 +1,0 @@
-2026/04/18-13:34:07.024 5538 Creating DB C:\Users\MIRAN AHMED\Desktop\infimode\weR1\.edge-local-req-check\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/04/18-13:34:07.029 5538 Reusing MANIFEST C:\Users\MIRAN AHMED\Desktop\infimode\weR1\.edge-local-req-check\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/04/18-13:34:07.426 7b30 Level-0 table #5: started
-2026/04/18-13:34:07.430 7b30 Level-0 table #5: 682109 bytes OK
-2026/04/18-13:34:07.431 7b30 Delete type=0 #3
