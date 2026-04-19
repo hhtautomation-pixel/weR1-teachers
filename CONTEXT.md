@@ -239,17 +239,19 @@ The workflow in `.github/workflows/deploy.yml`:
 2. installs `clasp`
 3. creates the credential file from the GitHub secret
 4. validates required Apps Script files exist
-5. reads `GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID` from `app.js`
+5. reads `APPS_SCRIPT_DEPLOYMENT_ID` from a GitHub repository variable
 6. runs `clasp push -f`
 7. updates the existing Apps Script deployment using that deployment id
 8. verifies the live `/exec?resource=requirements` endpoint returns valid JSON
 
 ### Single Source Of Truth
-The Apps Script deployment id now lives in `app.js` as:
+The Apps Script deployment id for CI/CD now lives in the GitHub repository variable:
 
-- `GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID`
+- `APPS_SCRIPT_DEPLOYMENT_ID`
 
-The frontend derives the `/exec` URL from that id, and the GitHub Actions workflow reads the same id before deploying.
+The frontend still has a default deployment id in `app.js`, but it can also be overridden at runtime through:
+
+- `window.WER1_RUNTIME_CONFIG.googleAppsScriptDeploymentId`
 
 This reduces drift between:
 
