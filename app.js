@@ -5,8 +5,10 @@ const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT
 // 1b. For Reading Requirement Notices: replace this local sample with the published Requirements-tab CSV URL
 const REQUIREMENTS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?gid=1772117371&single=true&output=csv";
 
-// 2. For Writing Data: The Web App URL of your deployed Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8uNCOMiRgnYNaUSHGUJkUA3mZODDEh_MM7sW-dy33QGjsdCIQg7hLlEnvWbGPxnj9/exec";
+// 2. For Reading/Writing Data: the Apps Script deployment id and derived Web App URL.
+// The GitHub Actions workflow reads this same deployment id so the frontend URL and backend deployment stay aligned.
+const GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "AKfycbx8uNCOMiRgnYNaUSHGUJkUA3mZODDEh_MM7sW-dy33QGjsdCIQg7hLlEnvWbGPxnj9";
+const GOOGLE_APPS_SCRIPT_URL = `https://script.google.com/macros/s/${GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID}/exec`;
 
 // --- DUMMY DATA REMOVED ---
 // Data is now fetched live from the Google Sheet above.

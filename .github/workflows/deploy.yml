@@ -28,6 +28,21 @@ jobs:
           test -f .clasp.json
           test -f appsscript.json
           test -f code.gs
+          test -f app.js
+
+      - name: Resolve Apps Script Deployment Config
+        run: |
+          APPS_SCRIPT_DEPLOYMENT_ID=$(grep -oP 'const GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "\K[^"]+' app.js || true)
+
+          if [ -z "$APPS_SCRIPT_DEPLOYMENT_ID" ]; then
+            echo "Could not read GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID from app.js"
+            exit 1
+          fi
+
+          APPS_SCRIPT_WEB_APP_URL="https://script.google.com/macros/s/${APPS_SCRIPT_DEPLOYMENT_ID}/exec"
+
+          echo "APPS_SCRIPT_DEPLOYMENT_ID=$APPS_SCRIPT_DEPLOYMENT_ID" >> "$GITHUB_ENV"
+          echo "APPS_SCRIPT_WEB_APP_URL=$APPS_SCRIPT_WEB_APP_URL" >> "$GITHUB_ENV"
 
       - name: Push Code
         run: clasp push -f
@@ -36,4 +51,24 @@ jobs:
         run: |
           # Getting the current time in IST (India Standard Time)
           TIMESTAMP=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %I:%M %p')
-          clasp deploy -i AKfycbx8uNCOMiRgnYNaUSHGUJkUA3mZODDEh_MM7sW-dy33QGjsdCIQg7hLlEnvWbGPxnj9 -d "GitHub Auto-Deploy: $TIMESTAMP"
+          clasp deploy -i "$APPS_SCRIPT_DEPLOYMENT_ID" -d "GitHub Auto-Deploy: $TIMESTAMP"
+
+      - name: Verify Live Apps Script Web App
+        run: |
+          echo "Verifying Apps Script health at: $APPS_SCRIPT_WEB_APP_URL?resource=requirements"
+
+          for attempt in 1 2 3 4 5; do
+            echo "Health check attempt $attempt"
+
+            if curl -fsSL "$APPS_SCRIPT_WEB_APP_URL?resource=requirements" -o apps_script_health.json; then
+              if node -e "const fs=require('fs'); const payload=JSON.parse(fs.readFileSync('apps_script_health.json','utf8')); if (!Array.isArray(payload)) throw new Error('Expected requirements array payload');"; then
+                echo "Apps Script health check passed."
+                exit 0
+              fi
+            fi
+
+            sleep 10
+          done
+
+          echo "Apps Script health check failed after deployment."
+          exit 1
