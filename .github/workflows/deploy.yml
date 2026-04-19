@@ -50,11 +50,13 @@ jobs:
         run: |
           # Getting the current time in IST (India Standard Time)
           TIMESTAMP=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %I:%M %p')
-          DEPLOYMENT_OUTPUT=$(clasp deploy -i "$APPS_SCRIPT_DEPLOYMENT_ID" -d "GitHub Auto-Deploy: $TIMESTAMP")
+          # Create NEW deployment (without -i) to get a fresh deployment ID
+          DEPLOYMENT_OUTPUT=$(clasp deploy -d "GitHub Auto-Deploy: $TIMESTAMP")
           echo "Deployment output: $DEPLOYMENT_OUTPUT"
           # Extract deployment ID from output like "Deployed AKfycb... @13"
           NEW_DEPLOYMENT_ID=$(echo "$DEPLOYMENT_OUTPUT" | sed -n 's/Deployed \(AKfycb[^ ]*\) @.*/\1/p')
           echo "DEPLOYMENT_ID=$NEW_DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
+          echo "APPS_SCRIPT_WEB_APP_URL=https://script.google.com/macros/s/${NEW_DEPLOYMENT_ID}/exec" >> "$GITHUB_ENV"
           echo "New deployment ID: $NEW_DEPLOYMENT_ID"
 
       - name: Verify Live Apps Script Web App
