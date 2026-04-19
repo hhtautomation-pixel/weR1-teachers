@@ -240,7 +240,7 @@ The workflow in `.github/workflows/deploy.yml`:
 3. creates the credential file from the GitHub secret
 4. validates required Apps Script files exist
 5. reads `APPS_SCRIPT_DEPLOYMENT_ID` from a GitHub repository variable
-6. runs `clasp push -f`
+6. runs `clasp push` (respects `.claspignore` - excludes `app.js` and `tests/**`)
 7. updates the existing Apps Script deployment using that deployment id
 8. verifies the live `/exec?resource=requirements` endpoint returns valid JSON
 
@@ -292,6 +292,29 @@ Most likely reasons:
 - browser cache delay
 
 This means not every "same error after deploy" situation is a code issue.
+
+### Deployment ID Mismatch and app.js Push Issue
+Multiple deployment IDs were tried but returned 404 even though deployments appeared successful.
+
+Root causes discovered:
+
+1. `app.js` (frontend JavaScript with `window` object) was being pushed to Apps Script via `clasp push -f`
+2. Apps Script runs server-side and `window` is not defined → `ReferenceError`
+3. This caused the Apps Script deployments to fail silently
+
+Fixes applied:
+
+1. Removed `-f` flag from `clasp push` so `.claspignore` is respected
+2. Updated `.claspignore` to explicitly exclude `app.js` and `tests/**`
+3. Created a fresh manual deployment that was verified to work
+4. Aligned both `app.js` and GitHub variable to use the same verified deployment ID
+
+### .claspignore Correctly Excludes app.js
+The `.claspignore` file ensures `app.js` (browser-only code) is never pushed to Apps Script. Only these files are pushed:
+- `code.gs` - Apps Script backend
+- `appsscript.json` - Apps Script manifest
+- `index.html` - Tutor search page
+- `requirements.html` - Requirements board page
 
 ## Debugging Behavior
 The frontend supports private diagnostics without exposing them to normal visitors by default.

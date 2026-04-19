@@ -2,8 +2,7 @@
 app.js
 tests/**
 
-# Apps Script files to push
-!.clasp.json
+# Apps Script files to push (do NOT include .clasp.json - it's local config only)
 !code.gs
 !appsscript.json
 !index.html

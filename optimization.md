@@ -168,3 +168,5 @@ Recommended next batch:
 Use this section for short dated notes when needed.
 
 - `2026-04-19`: Added initial optimization roadmap and phased quality plan
+- `2026-04-19`: Fixed deployment ID mismatch, removed `clasp push -f` to respect `.claspignore`, excluded `app.js` from Apps Script push (caused `ReferenceError: window is not defined`), verified new deployment ID works via curl
+- `2026-04-19`: Updated documentation to reflect correct deployment workflow
