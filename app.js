@@ -7,7 +7,7 @@ const REQUIREMENTS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PA
 
 // 2. For Reading/Writing Data: the Apps Script deployment id and derived Web App URL.
 // The frontend can optionally be overridden at runtime through window.WER1_RUNTIME_CONFIG.
-const DEFAULT_GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "AKfycbxSs8k9089hHEuk3a_jW07j_cFesbQK-GXHTytVhlcR0uId11gRaJhl1bmEaV-sBlak";
+const DEFAULT_GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "AKfycby7iIANhu0P1ks9AweLzggG46Jh8jrWRdJsoy_vUM5Sw3chEWRZXmnTGKQTPir_-2ty";
 const GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = (
     window.WER1_RUNTIME_CONFIG &&
     window.WER1_RUNTIME_CONFIG.googleAppsScriptDeploymentId
