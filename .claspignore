@@ -1,0 +1,10 @@
+# Frontend-only files - DO NOT push to Apps Script
+app.js
+tests/**
+
+# Apps Script files to push
+!.clasp.json
+!code.gs
+!appsscript.json
+!index.html
+!requirements.html
