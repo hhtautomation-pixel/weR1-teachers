@@ -30,7 +30,7 @@ jobs:
           test -f .clasp.json
           test -f appsscript.json
           test -f code.gs
-          test -f app.js
+          # Note: app.js is frontend only, not pushed to Apps Script
 
       - name: Resolve Apps Script Deployment Config
         run: |
@@ -44,7 +44,7 @@ jobs:
           echo "APPS_SCRIPT_WEB_APP_URL=$APPS_SCRIPT_WEB_APP_URL" >> "$GITHUB_ENV"
 
       - name: Push Code
-        run: clasp push -f
+        run: clasp push
 
       - name: Deploy & Versioning
         run: |
