@@ -171,9 +171,25 @@
                 </div>
                 
                 <form id="tutorForm">
-                    <div class="form-group">
-                        <label for="regName">Full Name</label>
-                        <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                    <div class="title-name-row">
+                        <div class="form-group title-field-group">
+                            <label>Title</label>
+                            <div class="title-options">
+                                <label class="title-option" for="regTitleMr">
+                                    <input type="radio" id="regTitleMr" name="regTitle" value="Mr" required>
+                                    <span>Mr</span>
+                                </label>
+                                <label class="title-option" for="regTitleMs">
+                                    <input type="radio" id="regTitleMs" name="regTitle" value="Ms" required>
+                                    <span>Ms</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-name-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -193,6 +209,11 @@
                     <div class="form-group">
                         <label for="regSubjects">Subjects</label>
                         <input type="text" id="regSubjects" class="form-input" required placeholder="e.g., Maths, Science">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regHighestQualification">Highest Qualification</label>
+                        <input type="text" id="regHighestQualification" class="form-input" required placeholder="e.g. B.Sc Mathematics, MA Urdu, Alim/Alimah">
                     </div>
                     
                     <div class="form-group">

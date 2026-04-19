@@ -56,10 +56,6 @@
             <span class="section-kicker">Teacher Notice Board</span>
             <h1 class="fade-up">Find Active <span class="gradient-text">Teaching Requirements</span></h1>
             <p class="fade-up delay-1">Browse open tutor notices, review recently closed requirements, and post a new requirement for admin approval.</p>
-            <div class="requirements-page-actions fade-up delay-2">
-                <a href="#requirementsBoard" class="btn-secondary">View Notices</a>
-                <button class="btn-primary" id="postRequirementInlineBtn">Post Requirement</button>
-            </div>
         </div>
     </section>
 
@@ -71,7 +67,6 @@
                     <h2>Open Requirements From Families & Students</h2>
                     <p>Newest approved requirements are highlighted first. Once a need is fulfilled, the admin can mark it closed and it moves to the archive below.</p>
                 </div>
-                <button class="btn-primary" id="postRequirementInlineBtnSecondary">Post Requirement</button>
             </div>
 
             <div id="requirementsLoader" class="loader-container">
@@ -85,8 +80,8 @@
 
                     <aside class="requirements-side-panel">
                         <div class="requirements-side-header">
-                            <h3>Open Requirements</h3>
-                            <span id="openRequirementsCount">0 Open</span>
+                            <h3 id="openRequirementsHeading">0 Open Requirements</h3>
+                            <button type="button" class="requirements-link-btn hidden" id="openRequirementsViewAll">View All</button>
                         </div>
                         <div class="requirements-list" id="openRequirementsList"></div>
                     </aside>
@@ -132,9 +127,25 @@
                 </div>
 
                 <form id="tutorForm">
-                    <div class="form-group">
-                        <label for="regName">Full Name</label>
-                        <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                    <div class="title-name-row">
+                        <div class="form-group title-field-group">
+                            <label>Title</label>
+                            <div class="title-options">
+                                <label class="title-option" for="regTitleMr">
+                                    <input type="radio" id="regTitleMr" name="regTitle" value="Mr" required>
+                                    <span>Mr</span>
+                                </label>
+                                <label class="title-option" for="regTitleMs">
+                                    <input type="radio" id="regTitleMs" name="regTitle" value="Ms" required>
+                                    <span>Ms</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-name-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" class="form-input" required placeholder="e.g., Ahsan Ali">
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -154,6 +165,11 @@
                     <div class="form-group">
                         <label for="regSubjects">Subjects</label>
                         <input type="text" id="regSubjects" class="form-input" required placeholder="e.g., Maths, Science">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regHighestQualification">Highest Qualification</label>
+                        <input type="text" id="regHighestQualification" class="form-input" required placeholder="e.g. B.Sc Mathematics, MA Urdu, Alim/Alimah">
                     </div>
 
                     <div class="form-group">

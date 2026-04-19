@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
 // 1. For Reading Data: The CSV URL of your published Google Sheet
-const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?gid=0&single=true&output=csv";
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?output=csv";
 
 // 1b. For Reading Requirement Notices: replace this local sample with the published Requirements-tab CSV URL
 const REQUIREMENTS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTUM0jeipzZXRCK7VnX_lLgX6KRNfNTsK7rtasptLh-uvn3q-TseYyCS_S_tvUhRshe0gR9QhLFHtFN/pub?gid=1772117371&single=true&output=csv";
@@ -17,6 +17,9 @@ let requirementsData = [];
 let activeTabCategory = '';
 let activeClassChip = 'All';
 let hasCommittedSearch = false;
+const DATA_DEBUG_ENABLED = new URLSearchParams(window.location.search).get('debugData') === '1';
+let tutorsDataSource = '';
+let requirementsDataSource = '';
 
 // DOM Elements
 const tutorsGrid = document.getElementById('tutorsGrid');
@@ -36,6 +39,8 @@ const requirementsSetup = document.getElementById('requirementsSetup');
 const featuredRequirementCard = document.getElementById('featuredRequirementCard');
 const openRequirementsList = document.getElementById('openRequirementsList');
 const closedRequirementsList = document.getElementById('closedRequirementsList');
+const openRequirementsHeading = document.getElementById('openRequirementsHeading');
+const openRequirementsViewAll = document.getElementById('openRequirementsViewAll');
 const openRequirementsCount = document.getElementById('openRequirementsCount');
 const closedRequirementsCount = document.getElementById('closedRequirementsCount');
 const postRequirementTriggers = document.querySelectorAll('#postRequirementBtn, #mobilePostRequirementBtn, #postRequirementInlineBtn, #postRequirementInlineBtnSecondary');
@@ -95,9 +100,11 @@ function fetchData() {
     fetchSheetResource({
         resource: 'tutors',
         csvUrl: GOOGLE_SHEET_CSV_URL,
-        onSuccess: processData,
-        onError: () => {
-            resultsCount.textContent = "Error loading data. Please check your sheet connection.";
+        onSuccess: ({ data, source }) => processData(data, source),
+        onError: (error) => {
+            resultsCount.textContent = DATA_DEBUG_ENABLED
+                ? `Error loading tutor data: ${formatDataError(error)}`
+                : "Error loading data. Please check your sheet connection.";
             hideLoader();
         }
     });
@@ -109,28 +116,39 @@ function fetchRequirementsData() {
     fetchSheetResource({
         resource: 'requirements',
         csvUrl: REQUIREMENTS_SHEET_CSV_URL,
-        onSuccess: (data) => {
+        onSuccess: ({ data, source }) => {
             requirementsData = data;
+            requirementsDataSource = source;
             renderRequirements();
         },
-        onError: () => {
+        onError: (error) => {
             if (!REQUIREMENTS_SHEET_CSV_URL || REQUIREMENTS_SHEET_CSV_URL.trim() === "") {
                 showRequirementsSetup();
                 return;
             }
 
-            showRequirementsEmpty("Could not load the requirements board right now.");
+            const errorMessage = DATA_DEBUG_ENABLED
+                ? `Could not load the requirements board right now. ${formatDataError(error)}`
+                : "Could not load the requirements board right now.";
+            showRequirementsEmpty(errorMessage);
         }
     });
 }
 
 function fetchSheetResource({ resource, csvUrl, onSuccess, onError }) {
     fetchFromAppsScript(resource)
-        .then(onSuccess)
+        .then((data) => {
+            reportDataSource(resource, 'Apps Script');
+            onSuccess({ data, source: 'Apps Script' });
+        })
         .catch((appsScriptError) => {
             console.warn(`Apps Script ${resource} fetch failed, trying CSV fallback.`, appsScriptError);
 
             if (!csvUrl || csvUrl.trim() === "") {
+                reportDataFailure(resource, {
+                    appsScriptError: formatDataError(appsScriptError),
+                    csvError: 'Missing CSV URL.'
+                });
                 onError(appsScriptError);
                 return;
             }
@@ -140,11 +158,20 @@ function fetchSheetResource({ resource, csvUrl, onSuccess, onError }) {
                 header: true,
                 skipEmptyLines: true,
                 complete: function (results) {
-                    onSuccess(results.data);
+                    if (results.errors && results.errors.length > 0) {
+                        console.error(`CSV fallback parse warnings for ${resource}:`, results.errors);
+                    }
+
+                    reportDataSource(resource, 'CSV fallback');
+                    onSuccess({ data: results.data, source: 'CSV fallback' });
                 },
                 error: function (csvError) {
                     console.error(`CSV fallback failed for ${resource}:`, csvError);
-                    onError(csvError);
+                    reportDataFailure(resource, {
+                        appsScriptError: formatDataError(appsScriptError),
+                        csvError: formatDataError(csvError)
+                    });
+                    onError(csvError || appsScriptError);
                 }
             });
         });
@@ -179,8 +206,9 @@ function fetchFromAppsScript(resource) {
         });
 }
 
-function processData(data) {
+function processData(data, source) {
     tutorsData = data;
+    tutorsDataSource = source;
     hideLoader();
     updateStats();
     applyFilters();
@@ -203,13 +231,19 @@ function renderTutors(dataToRender) {
 
     dataToRender.forEach((tutor, index) => {
         // Create initials for avatar fallback
-        const initials = tutor['Name'] ? tutor['Name'].substring(0, 2).toUpperCase() : 'W1';
+        const tutorTitle = safeDisplayText(tutor['Title'], '');
+        const tutorName = safeDisplayText(tutor['Name'], 'Unnamed Tutor');
+        const displayName = [tutorTitle, tutorName].filter(Boolean).join(' ');
+        const initials = tutorName.substring(0, 2).toUpperCase();
 
         // Ensure values strictly exist
-        const type = tutor['Category'] || 'Educator';
-        const classes = tutor['Classes Taught'] || 'N/A';
-        const subjects = tutor['Subjects Taught'] || 'N/A';
-        const area = tutor['Area'] || 'Kolkata';
+        const type = safeDisplayText(tutor['Category'], 'Educator');
+        const classes = safeDisplayText(tutor['Classes Taught'], 'N/A');
+        const subjects = safeDisplayText(tutor['Subjects Taught'], 'N/A');
+        const area = safeDisplayText(tutor['Area'], 'Kolkata');
+        const email = safeDisplayText(tutor['Email'], 'N/A');
+        const phone = safeDisplayText(tutor['Phone'], 'Tutor');
+        const safePhoneHref = buildTelHref(tutor['Phone']);
 
         // Add staggered animation delay
         const delay = (index % 10) * 0.1;
@@ -218,14 +252,14 @@ function renderTutors(dataToRender) {
             <div class="tutor-card fade-up" style="animation-delay: ${delay}s">
                 <div class="card-header">
                     <div class="avatar-placeholder">${initials}</div>
-                    <span class="tutor-type">${type}</span>
+                    <span class="tutor-type">${escapeHtml(type)}</span>
                 </div>
                 
                 <div class="tutor-info">
-                    <h3>${tutor['Name']}</h3>
+                    <h3>${escapeHtml(displayName)}</h3>
                     <div class="tutor-location">
                         <i class="fa-solid fa-location-dot"></i>
-                        <span>${area}</span>
+                        <span>${escapeHtml(area)}</span>
                     </div>
                 </div>
                 
@@ -234,7 +268,7 @@ function renderTutors(dataToRender) {
                         <i class="fa-solid fa-book-open detail-icon"></i>
                         <div class="detail-content">
                             <span class="detail-label">SUBJECTS</span>
-                            <span>${subjects}</span>
+                            <span>${escapeHtml(subjects)}</span>
                         </div>
                     </div>
                     
@@ -242,7 +276,7 @@ function renderTutors(dataToRender) {
                         <i class="fa-solid fa-chalkboard-user detail-icon"></i>
                         <div class="detail-content">
                             <span class="detail-label">CLASSES</span>
-                            <span>${classes}</span>
+                            <span>${escapeHtml(classes)}</span>
                         </div>
                     </div>
 
@@ -250,13 +284,13 @@ function renderTutors(dataToRender) {
                         <i class="fa-solid fa-envelope detail-icon"></i>
                         <div class="detail-content">
                             <span class="detail-label">EMAIL</span>
-                            <span>${tutor['Email'] || 'N/A'}</span>
+                            <span>${escapeHtml(email)}</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="card-actions">
-                    <a href="tel:${tutor['Phone']}" class="action-btn connect-btn"><i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${tutor['Phone'] || 'Tutor'}</a>
+                    <a href="${safePhoneHref}" class="action-btn connect-btn"><i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${escapeHtml(phone)}</a>
                 </div>
             </div>
         `;
@@ -308,14 +342,25 @@ function renderRequirements() {
     featuredRequirementCard.innerHTML = buildFeaturedRequirementMarkup(featuredRequirement);
 
     openRequirementsList.innerHTML = openRequirements.length
-        ? openRequirements.map(requirement => buildRequirementCardMarkup(requirement, false)).join("")
+        ? openRequirements.map((requirement, index) => buildOpenRequirementAccordionMarkup(requirement, index)).join("")
         : `<div class="requirement-card"><h4>No Open Requirements</h4><p class="requirement-summary">Approved teaching requirements will appear here as soon as they are available.</p></div>`;
 
     closedRequirementsList.innerHTML = closedRequirements.length
         ? closedRequirements.map(requirement => buildRequirementCardMarkup(requirement, true)).join("")
         : `<div class="requirement-card closed-card"><h4>No Closed Requirements Yet</h4><p class="requirement-summary">Closed notices will appear here once the admin marks a requirement as closed.</p></div>`;
 
-    openRequirementsCount.textContent = `${openRequirements.length} Open`;
+    if (openRequirementsHeading) {
+        openRequirementsHeading.textContent = `${openRequirements.length} Open Requirement${openRequirements.length === 1 ? '' : 's'}`;
+    }
+
+    if (openRequirementsViewAll) {
+        openRequirementsViewAll.classList.toggle('hidden', openRequirements.length === 0);
+    }
+
+    if (openRequirementsCount) {
+        openRequirementsCount.textContent = `${openRequirements.length} Open`;
+    }
+
     closedRequirementsCount.textContent = `${closedRequirements.length} Closed`;
     requirementsContent.classList.remove('hidden');
     requirementsLoader.classList.add('hidden');
@@ -358,8 +403,8 @@ function buildFeaturedRequirementMarkup(requirement) {
             ${buildRequirementDetailsMarkup(requirement)}
         </div>
         <div class="featured-actions">
-            <a href="tel:${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || '')}" class="action-btn connect-btn">
-                <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || 'Now')}
+            <a href="${buildTelHref(requirement['Contact Number'] || requirement['Contact'])}" class="action-btn connect-btn">
+                <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call ${escapeHtml(safeDisplayText(requirement['Contact Number'] || requirement['Contact'], 'Now'))}
             </a>
         </div>
     `;
@@ -380,9 +425,47 @@ function buildRequirementCardMarkup(requirement, isClosed) {
                 ${buildRequirementDetailsMarkup(requirement)}
             </div>
             <div class="requirement-actions">
-                <a href="tel:${escapeHtml(requirement['Contact Number'] || requirement['Contact'] || '')}" class="action-btn connect-btn">
+                <a href="${buildTelHref(requirement['Contact Number'] || requirement['Contact'])}" class="action-btn connect-btn">
                     <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call
                 </a>
+            </div>
+        </article>
+    `;
+}
+
+function buildOpenRequirementAccordionMarkup(requirement, index) {
+    const title = buildRequirementTitle(requirement);
+    const status = getRequirementStatus(requirement);
+    const requirementClass = safeDisplayText(requirement['Class'], 'Class not specified');
+    const subjects = safeDisplayText(requirement['Subjects'], 'Subjects not specified');
+    const location = safeDisplayText(getRequirementLocation(requirement), 'Location not specified');
+    const notes = safeDisplayText(requirement['Notes'], 'No additional note provided.');
+
+    return `
+        <article class="open-requirement-card" data-open-requirement-card="${index}">
+            <button type="button" class="open-requirement-toggle" data-open-requirement-toggle="${index}" aria-expanded="false">
+                <div class="open-requirement-topline">
+                    <span class="meta-pill ${status === 'Closed' ? 'status-closed' : 'status-open'}">${status}</span>
+                    <span class="meta-pill"><i class="fa-regular fa-clock"></i>${formatRequirementDate(requirement)}</span>
+                </div>
+                <h4>${title}</h4>
+                <div class="open-requirement-summary-grid">
+                    <span><strong>Class</strong>${escapeHtml(requirementClass)}</span>
+                    <span><strong>Subjects</strong>${escapeHtml(subjects)}</span>
+                    <span><strong>Location</strong>${escapeHtml(location)}</span>
+                </div>
+                <span class="open-requirement-expand-label">View Details <i class="fa-solid fa-chevron-down"></i></span>
+            </button>
+            <div class="open-requirement-details" data-open-requirement-details="${index}">
+                <p class="requirement-summary">${escapeHtml(notes)}</p>
+                <div class="requirement-details">
+                    ${buildRequirementDetailsMarkup(requirement)}
+                </div>
+                <div class="requirement-actions">
+                    <a href="${buildTelHref(requirement['Contact Number'] || requirement['Contact'])}" class="action-btn connect-btn">
+                        <i class="fa-solid fa-phone-volume" style="margin-right: 6px;"></i> Call
+                    </a>
+                </div>
             </div>
         </article>
     `;
@@ -593,6 +676,54 @@ function setupEventListeners() {
             openRequirementModal();
         });
     });
+
+    if (openRequirementsList) {
+        openRequirementsList.addEventListener('click', (e) => {
+            const toggle = e.target.closest('.open-requirement-toggle');
+            if (!toggle) {
+                return;
+            }
+
+            const targetId = toggle.getAttribute('data-open-requirement-toggle');
+            toggleOpenRequirementCard(targetId, true);
+        });
+    }
+
+    if (openRequirementsViewAll) {
+        openRequirementsViewAll.addEventListener('click', () => {
+            const cards = openRequirementsList ? openRequirementsList.querySelectorAll('.open-requirement-card') : [];
+            cards.forEach(card => card.classList.add('expanded'));
+
+            const toggles = openRequirementsList ? openRequirementsList.querySelectorAll('.open-requirement-toggle') : [];
+            toggles.forEach(toggle => toggle.setAttribute('aria-expanded', 'true'));
+
+            if (openRequirementsList && typeof openRequirementsList.scrollIntoView === 'function') {
+                openRequirementsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+}
+
+function toggleOpenRequirementCard(targetId, shouldScroll) {
+    if (!openRequirementsList) {
+        return;
+    }
+
+    const cards = openRequirementsList.querySelectorAll('.open-requirement-card');
+    cards.forEach(card => {
+        const isTarget = card.getAttribute('data-open-requirement-card') === targetId;
+        const nextExpandedState = isTarget ? !card.classList.contains('expanded') : false;
+        card.classList.toggle('expanded', nextExpandedState);
+
+        const toggle = card.querySelector('.open-requirement-toggle');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', nextExpandedState ? 'true' : 'false');
+        }
+
+        if (isTarget && nextExpandedState && shouldScroll && typeof card.scrollIntoView === 'function') {
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
 }
 
 function applyFilters() {
@@ -661,6 +792,119 @@ function renderPrivateState() {
     resultsCount.textContent = 'Search to view matching educators';
 }
 
+function formatDataError(error) {
+    if (!error) {
+        return 'Unknown error.';
+    }
+
+    if (typeof error === 'string') {
+        return error;
+    }
+
+    if (error.message) {
+        return error.message;
+    }
+
+    if (error.status) {
+        return `Request failed with status ${error.status}.`;
+    }
+
+    return 'Unknown error.';
+}
+
+function safeDisplayText(value, fallback = '') {
+    if (value === null || value === undefined) {
+        return fallback;
+    }
+
+    const normalized = String(value).trim();
+    return normalized === '' ? fallback : normalized;
+}
+
+function sanitizePhoneNumber(value) {
+    const normalized = String(value || '').replace(/[^\d+]/g, '');
+    const plusCount = (normalized.match(/\+/g) || []).length;
+
+    if (!normalized || plusCount > 1 || (normalized.includes('+') && !normalized.startsWith('+'))) {
+        return '';
+    }
+
+    const digitsOnly = normalized.replace(/\+/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+        return '';
+    }
+
+    return normalized;
+}
+
+function buildTelHref(value) {
+    const safeNumber = sanitizePhoneNumber(value);
+    return safeNumber ? `tel:${safeNumber}` : '#';
+}
+
+function reportDataSource(resource, source) {
+    console.info(`[weR1] ${resource} loaded via ${source}.`);
+
+    if (!DATA_DEBUG_ENABLED) {
+        return;
+    }
+
+    upsertDebugBadge(resource, `Loaded via ${source}`);
+}
+
+function reportDataFailure(resource, details) {
+    console.error(`[weR1] ${resource} failed to load from all sources.`, details);
+
+    if (!DATA_DEBUG_ENABLED) {
+        return;
+    }
+
+    upsertDebugBadge(
+        resource,
+        `Load failed (${details.appsScriptError} / ${details.csvError})`,
+        true
+    );
+}
+
+function upsertDebugBadge(resource, message, isError = false) {
+    let badgeStack = document.getElementById('dataDebugStack');
+
+    if (!badgeStack) {
+        badgeStack = document.createElement('div');
+        badgeStack.id = 'dataDebugStack';
+        badgeStack.style.position = 'fixed';
+        badgeStack.style.right = '16px';
+        badgeStack.style.bottom = '16px';
+        badgeStack.style.zIndex = '9999';
+        badgeStack.style.display = 'grid';
+        badgeStack.style.gap = '10px';
+        badgeStack.style.maxWidth = '320px';
+        document.body.appendChild(badgeStack);
+    }
+
+    const badgeId = `debug-badge-${resource}`;
+    let badge = document.getElementById(badgeId);
+
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.id = badgeId;
+        badge.style.padding = '10px 12px';
+        badge.style.borderRadius = '12px';
+        badge.style.boxShadow = '0 10px 30px rgba(15, 23, 42, 0.16)';
+        badge.style.fontFamily = 'Inter, sans-serif';
+        badge.style.fontSize = '12px';
+        badge.style.lineHeight = '1.4';
+        badge.style.color = '#0f172a';
+        badge.style.background = 'rgba(255, 255, 255, 0.96)';
+        badge.style.border = '1px solid rgba(148, 163, 184, 0.35)';
+        badge.style.backdropFilter = 'blur(10px)';
+        badgeStack.appendChild(badge);
+    }
+
+    badge.style.borderColor = isError ? 'rgba(220, 38, 38, 0.35)' : 'rgba(16, 185, 129, 0.35)';
+    badge.innerHTML = `<strong style="display:block; margin-bottom:4px;">${escapeHtml(resource)}</strong><span>${escapeHtml(message)}</span>`;
+}
+
 function splitMultiValueField(value) {
     if (!value) {
         return [];
@@ -679,6 +923,63 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function getTrimmedValue(elementId) {
+    const element = document.getElementById(elementId);
+    return element ? element.value.trim() : '';
+}
+
+function getSelectedRadioValue(name) {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    return checked ? checked.value.trim() : '';
+}
+
+function parseSubmissionResponse(response) {
+    if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return response.text().then((bodyText) => {
+        const trimmedBody = bodyText.trim();
+
+        if (!trimmedBody) {
+            throw new Error('Empty response from server.');
+        }
+
+        try {
+            return JSON.parse(trimmedBody);
+        } catch (parseError) {
+            if (trimmedBody === 'Success') {
+                return { ok: true };
+            }
+
+            if (trimmedBody.startsWith('Error:')) {
+                throw new Error(trimmedBody.replace(/^Error:\s*/, '') || 'Server returned an error.');
+            }
+
+            throw new Error('Unexpected response from server.');
+        }
+    });
+}
+
+function submitFormData(formData) {
+    if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.trim() === "") {
+        return Promise.reject(new Error("Admin has not configured the form submission URL."));
+    }
+
+    return fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: formData
+    })
+        .then(parseSubmissionResponse)
+        .then((result) => {
+            if (!result || result.ok !== true) {
+                throw new Error((result && result.error) || 'Submission failed.');
+            }
+
+            return result;
+        });
 }
 
 function updateActiveFiltersTags(search, cat, cls) {
@@ -770,33 +1071,23 @@ if (tutorForm) {
         // Gather form data
         const formData = new FormData();
         formData.append('formType', 'tutor_registration');
-        formData.append('Name', document.getElementById('regName').value);
-        formData.append('Category', document.getElementById('regCategory').value);
-        formData.append('Classes', document.getElementById('regClasses').value);
-        formData.append('Subjects', document.getElementById('regSubjects').value);
-        formData.append('Area', document.getElementById('regArea').value);
-        formData.append('Phone', document.getElementById('regPhone').value);
-        formData.append('Email', document.getElementById('regEmail').value);
+        formData.append('Title', getSelectedRadioValue('regTitle'));
+        formData.append('Name', getTrimmedValue('regName'));
+        formData.append('Category', getTrimmedValue('regCategory'));
+        formData.append('Classes', getTrimmedValue('regClasses'));
+        formData.append('Subjects', getTrimmedValue('regSubjects'));
+        formData.append('HighestQualification', getTrimmedValue('regHighestQualification'));
+        formData.append('Area', getTrimmedValue('regArea'));
+        formData.append('Phone', getTrimmedValue('regPhone'));
+        formData.append('Email', getTrimmedValue('regEmail'));
 
-        // If no Apps Script URL is set, alert the user
-        if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.trim() === "") {
-            alert("Registration Error: Admin has not configured the form submission URL.");
-            resetSubmitBtn();
-            return;
-        }
-
-        // Send data to Apps Script
-        fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                // Assume success if fetch doesn't throw, since we might run into CORS depending on GAS setup
+        submitFormData(formData)
+            .then(() => {
                 showSuccess();
             })
             .catch(error => {
                 console.error("Error submitting form:", error);
-                alert("There was an error submitting your form. Please try again.");
+                alert(`There was an error submitting your form. ${formatDataError(error)}`);
                 resetSubmitBtn();
             });
     });
@@ -812,30 +1103,21 @@ if (requirementForm) {
 
         const formData = new FormData();
         formData.append('formType', 'requirement_submission');
-        formData.append('Class', document.getElementById('reqClass').value);
-        formData.append('Subjects', document.getElementById('reqSubjects').value);
-        formData.append('Email', document.getElementById('reqEmail').value);
-        formData.append('Location', document.getElementById('reqLocation').value);
+        formData.append('Class', getTrimmedValue('reqClass'));
+        formData.append('Subjects', getTrimmedValue('reqSubjects'));
+        formData.append('Email', getTrimmedValue('reqEmail'));
+        formData.append('Location', getTrimmedValue('reqLocation'));
         formData.append('NoLocationConstraint', document.getElementById('reqNoLocation').checked ? 'Yes' : 'No');
-        formData.append('ContactNumber', document.getElementById('reqContact').value);
-        formData.append('Notes', document.getElementById('reqNotes').value);
+        formData.append('ContactNumber', getTrimmedValue('reqContact'));
+        formData.append('Notes', getTrimmedValue('reqNotes'));
 
-        if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.trim() === "") {
-            alert("Requirement Error: Admin has not configured the form submission URL.");
-            resetRequirementSubmitBtn();
-            return;
-        }
-
-        fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        })
+        submitFormData(formData)
             .then(() => {
                 showRequirementSuccess();
             })
             .catch(error => {
                 console.error("Error submitting requirement:", error);
-                alert("There was an error submitting the requirement. Please try again.");
+                alert(`There was an error submitting the requirement. ${formatDataError(error)}`);
                 resetRequirementSubmitBtn();
             });
     });
