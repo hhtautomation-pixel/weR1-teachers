@@ -7,7 +7,7 @@ const REQUIREMENTS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PA
 
 // 2. For Reading/Writing Data: the Apps Script deployment id and derived Web App URL.
 // The GitHub Actions workflow reads this same deployment id so the frontend URL and backend deployment stay aligned.
-const GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "AKfycby7iIANhu0P1ks9AweLzggG46Jh8jrWRdJsoy_vUM5Sw3chEWRZXmnTGKQTPir_-2ty"; 
+const GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID = "AKfycbwMPiDbNLwyyJf-KCmmuEU_0oR4O43ufaYqKy2jkPeiSvcmpN-smW0ZA4m0S9LrZ29W"; 
 const GOOGLE_APPS_SCRIPT_URL = `https://script.google.com/macros/s/${GOOGLE_APPS_SCRIPT_DEPLOYMENT_ID}/exec`;
 
 // --- DUMMY DATA REMOVED ---
